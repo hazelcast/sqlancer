@@ -1,5 +1,8 @@
 package sqlancer.common;
 
+import org.apache.commons.lang3.RandomStringUtils;
+
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,7 +14,7 @@ public final class DBMSCommon {
     }
 
     public static String createTableName(int nr) {
-        return String.format("t%d", nr);
+        return String.format("t%d_%s", nr, RandomStringUtils.randomAlphanumeric(10));
     }
 
     public static String createColumnName(int nr) {
