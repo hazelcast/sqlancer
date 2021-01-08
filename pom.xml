@@ -43,7 +43,6 @@
           <source>8</source>
           <target>8</target>
           <compilerArguments>
-            <properties>.settings/org.eclipse.jdt.core.prefs</properties>
           </compilerArguments>
           <compilerId>eclipse</compilerId>
           <showWarnings>true</showWarnings>
@@ -236,6 +235,11 @@
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>1.4.200</version>
+    </dependency>
+    <dependency>
+      <groupId>com.hazelcast</groupId>
+      <artifactId>hazelcast</artifactId>
+      <version>4.1.1</version>
     </dependency>
   </dependencies>
   <reporting>
