@@ -1,7 +1,5 @@
 package sqlancer.hazelcast;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import sqlancer.*;
 import sqlancer.common.DBMSCommon;
 import sqlancer.common.query.SQLQueryAdapter;
@@ -9,8 +7,6 @@ import sqlancer.common.query.SQLQueryProvider;
 import sqlancer.common.query.SQLancerResultSet;
 import sqlancer.hazelcast.gen.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -171,18 +167,11 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
     @Override
     public SQLConnection createDatabase(HazelcastGlobalState globalState) throws Exception {
         final String CONN_STRING = "jdbc:hazelcast://localhost:5701/public";
-
-        HazelcastInstance member = Hazelcast.newHazelcastInstance();
-
-        if (globalState.getDmbsSpecificOptions().getTestOracleFactory().stream()
-                .anyMatch((o) -> o == HazelcastOptions.HazelcastOracleFactory.PQS)) {
-            generateOnlyKnown = true;
-        }
-        String entryDatabaseName = "hazelcast";
+        final String ENTRY_DATABASE_NAME = "hazelcast";
         databaseName = globalState.getDatabaseName();
         Class.forName("com.hazelcast.jdbc.Driver");
         Connection con = DriverManager.getConnection(CONN_STRING);
-        globalState.getState().logStatement(String.format("\\c %s;", entryDatabaseName));
+        globalState.getState().logStatement(String.format("\\c %s;", ENTRY_DATABASE_NAME));
         globalState.getState().logStatement("DROP DATABASE IF EXISTS " + databaseName);
         createDatabaseCommand = getCreateDatabaseCommand(globalState);
         globalState.getState().logStatement(createDatabaseCommand);
@@ -195,7 +184,7 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
         con.close();
         int databaseIndex = entryURL.indexOf(entryPath) + 1;
         String preDatabaseName = entryURL.substring(0, databaseIndex);
-        String postDatabaseName = entryURL.substring(databaseIndex + entryDatabaseName.length());
+        String postDatabaseName = entryURL.substring(databaseIndex + ENTRY_DATABASE_NAME.length());
         testURL = preDatabaseName + databaseName + postDatabaseName;
         globalState.getState().logStatement(String.format("\\c %s;", databaseName));
         con = DriverManager.getConnection(CONN_STRING);
