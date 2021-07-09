@@ -137,26 +137,15 @@ public final class HazelcastCommon {
             }
             break;
         case TEXT:
-            if (Randomly.getBoolean()) {
-                sb.append("TEXT");
-            } else if (Randomly.getBoolean()) {
-                // TODO: support CHAR (without VAR)
-                if (HazelcastProvider.generateOnlyKnown || Randomly.getBoolean()) {
-                    sb.append("VAR");
-                }
-                sb.append("CHAR");
-                sb.append("(");
-                sb.append(ThreadLocalRandom.current().nextInt(1, 500));
-                sb.append(")");
-            } else {
-                sb.append("name");
-            }
-            if (Randomly.getBoolean() && !HazelcastProvider.generateOnlyKnown) {
-                sb.append(" COLLATE ");
-                sb.append('"');
-                sb.append(Randomly.fromList(opClasses));
-                sb.append('"');
-            }
+            // TODO: support CHAR (without VAR)
+            sb.append("VARCHAR");
+            //TODO: Support collations
+//            if (Randomly.getBoolean() && !HazelcastProvider.generateOnlyKnown) {
+//                sb.append(" COLLATE ");
+//                sb.append('"');
+//                sb.append(Randomly.fromList(opClasses));
+//                sb.append('"');
+//            }
             break;
         case DECIMAL:
             sb.append("DECIMAL");
@@ -164,27 +153,24 @@ public final class HazelcastCommon {
         case FLOAT:
             sb.append("REAL");
             break;
-        case REAL:
-            sb.append("FLOAT");
-            break;
-        case RANGE:
-            sb.append(Randomly.fromOptions("int4range", "int4range")); // , "int8range", "numrange"
-            break;
-        case MONEY:
-            sb.append("money");
-            break;
-        case BIT:
-            sb.append("BIT");
-            // if (Randomly.getBoolean()) {
-            sb.append(" VARYING");
-            // }
-            sb.append("(");
-            sb.append(Randomly.getNotCachedInteger(1, 500));
-            sb.append(")");
-            break;
-        case INET:
-            sb.append("inet");
-            break;
+//        case REAL:
+//            sb.append("FLOAT");
+//            break;
+//        case RANGE:
+//            sb.append(Randomly.fromOptions("int4range", "int4range")); // , "int8range", "numrange"
+//            break;
+//        case BIT:
+//            sb.append("BIT");
+//            // if (Randomly.getBoolean()) {
+//            sb.append(" VARYING");
+//            // }
+//            sb.append("(");
+//            sb.append(Randomly.getNotCachedInteger(1, 500));
+//            sb.append(")");
+//            break;
+//        case INET:
+//            sb.append("inet");
+//            break;
         default:
             throw new AssertionError(type);
         }

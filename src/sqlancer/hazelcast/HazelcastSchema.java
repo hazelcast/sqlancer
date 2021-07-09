@@ -1,5 +1,8 @@
 package sqlancer.hazelcast;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import sqlancer.IgnoreMeException;
 import sqlancer.Randomly;
 import sqlancer.SQLConnection;
@@ -18,17 +21,24 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     private final String databaseName;
 
     public enum HazelcastDataType {
-        INT, BOOLEAN, TEXT, DECIMAL, FLOAT, REAL, RANGE, MONEY, BIT, INET;
+        INT,
+        BOOLEAN,
+        TEXT,
+        DECIMAL,
+        FLOAT,
+        REAL,
+        RANGE,
+        BIT,
+        INET;
 
         public static HazelcastDataType getRandomType() {
-            List<HazelcastDataType> dataTypes = new ArrayList<>(Arrays.asList(values()));
+            List<HazelcastDataType> dataTypes = new ArrayList<>(Arrays.asList(INT, BOOLEAN, TEXT));
             if (HazelcastProvider.generateOnlyKnown) {
                 dataTypes.remove(HazelcastDataType.DECIMAL);
                 dataTypes.remove(HazelcastDataType.FLOAT);
                 dataTypes.remove(HazelcastDataType.REAL);
                 dataTypes.remove(HazelcastDataType.INET);
                 dataTypes.remove(HazelcastDataType.RANGE);
-                dataTypes.remove(HazelcastDataType.MONEY);
                 dataTypes.remove(HazelcastDataType.BIT);
             }
             return Randomly.fromList(dataTypes);
@@ -74,17 +84,17 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                         constant = HazelcastConstant.createNullConstant();
                     } else {
                         switch (column.getType()) {
-                        case INT:
-                            constant = HazelcastConstant.createIntConstant(randomRowValues.getLong(columnIndex));
-                            break;
-                        case BOOLEAN:
-                            constant = HazelcastConstant.createBooleanConstant(randomRowValues.getBoolean(columnIndex));
-                            break;
-                        case TEXT:
-                            constant = HazelcastConstant.createTextConstant(randomRowValues.getString(columnIndex));
-                            break;
-                        default:
-                            throw new IgnoreMeException();
+                            case INT:
+                                constant = HazelcastConstant.createIntConstant(randomRowValues.getLong(columnIndex));
+                                break;
+                            case BOOLEAN:
+                                constant = HazelcastConstant.createBooleanConstant(randomRowValues.getBoolean(columnIndex));
+                                break;
+                            case TEXT:
+                                constant = HazelcastConstant.createTextConstant(randomRowValues.getString(columnIndex));
+                                break;
+                            default:
+                                throw new IgnoreMeException();
                         }
                     }
                     values.put(column, constant);
@@ -101,34 +111,32 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
 
     public static HazelcastDataType getColumnType(String typeString) {
         switch (typeString) {
-        case "smallint":
-        case "integer":
-        case "bigint":
-            return HazelcastDataType.INT;
-        case "boolean":
-            return HazelcastDataType.BOOLEAN;
-        case "text":
-        case "character":
-        case "character varying":
-        case "name":
-            return HazelcastDataType.TEXT;
-        case "numeric":
-            return HazelcastDataType.DECIMAL;
-        case "double precision":
-            return HazelcastDataType.FLOAT;
-        case "real":
-            return HazelcastDataType.REAL;
-        case "int4range":
-            return HazelcastDataType.RANGE;
-        case "money":
-            return HazelcastDataType.MONEY;
-        case "bit":
-        case "bit varying":
-            return HazelcastDataType.BIT;
-        case "inet":
-            return HazelcastDataType.INET;
-        default:
-            throw new AssertionError(typeString);
+            case "smallint":
+            case "integer":
+            case "bigint":
+                return HazelcastDataType.INT;
+            case "boolean":
+                return HazelcastDataType.BOOLEAN;
+            case "text":
+            case "character":
+            case "character varying":
+            case "name":
+                return HazelcastDataType.TEXT;
+            case "numeric":
+                return HazelcastDataType.DECIMAL;
+            case "double precision":
+                return HazelcastDataType.FLOAT;
+//            case "real":
+//                return HazelcastDataType.REAL;
+//            case "int4range":
+//                return HazelcastDataType.RANGE;
+//            case "bit":
+//            case "bit varying":
+//                return HazelcastDataType.BIT;
+//            case "inet":
+//                return HazelcastDataType.INET;
+            default:
+                throw new AssertionError(typeString);
         }
     }
 
@@ -209,18 +217,31 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     public static HazelcastSchema fromConnection(SQLConnection con, String databaseName) throws SQLException {
         try {
             List<HazelcastTable> databaseTables = new ArrayList<>();
+            Iterator<SqlRow> iterator = Hazelcast.bootstrappedInstance().getSql().execute("SELECT * " +
+                    "FROM information_schema.mappings;").iterator();
+            int mappings = 0;
+            while(iterator.hasNext()) {
+                System.out.println("mapping_name: " + iterator.next().getObject("mapping_name"));
+                System.out.println("mapping_type: " + iterator.next().getObject("mapping_type"));
+                System.out.println("mapping_schema: " + iterator.next().getObject("mapping_schema"));
+                mappings++;
+            }
+
+            System.out.println("Current created mappings: " + mappings);
             try (Statement s = con.createStatement()) {
                 try (ResultSet rs = s.executeQuery(
-                        "SELECT table_name, table_schema, table_type, is_insertable_into FROM information_schema.tables WHERE table_schema='public' OR table_schema LIKE 'pg_temp_%' ORDER BY table_name")) {
+                     "SELECT mapping_name, mapping_type, mapping_schema " +
+                             "FROM information_schema.mappings " +
+                             "ORDER BY mapping_name")
+                ) {
                     while (rs.next()) {
-                        String tableName = rs.getString("table_name");
-                        String tableTypeSchema = rs.getString("table_schema");
-                        boolean isInsertable = rs.getBoolean("is_insertable_into");
-                        // TODO: also check insertable
-                        // TODO: insert into view?
+                        String tableName = rs.getString("mapping_name");
+                        String tableTypeSchema = rs.getString("mapping_schema");
+                        //TODO: Temporarily hardcoded to 'true'. Find out how to get proper value.
+                        boolean isInsertable = true;
                         boolean isView = tableName.startsWith("v"); // tableTypeStr.contains("VIEW") ||
-                                                                    // tableTypeStr.contains("LOCAL TEMPORARY") &&
-                                                                    // !isInsertable;
+                        // tableTypeStr.contains("LOCAL TEMPORARY") &&
+                        // !isInsertable;
                         HazelcastTable.TableType tableType = getTableType(tableTypeSchema);
                         List<HazelcastColumn> databaseColumns = getTableColumns(con, tableName);
                         List<HazelcastIndex> indexes = getIndexes(con, tableName);

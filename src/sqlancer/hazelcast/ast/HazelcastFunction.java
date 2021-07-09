@@ -95,7 +95,7 @@ public class HazelcastFunction implements HazelcastExpression {
 
             @Override
             public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return new HazelcastDataType[] { HazelcastDataType.TEXT };
+                return new HazelcastDataType[] { HazelcastDataType.TEXT};
             }
         },
         UPPER(1, "upper") {

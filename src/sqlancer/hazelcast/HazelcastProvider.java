@@ -159,7 +159,7 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
 
     @Override
     public void generateDatabase(HazelcastGlobalState globalState) throws Exception {
-        readFunctions(globalState);
+//        readFunctions(globalState);
         createTables(globalState, Randomly.fromOptions(4, 5, 6));
         prepareTables(globalState);
     }
@@ -171,23 +171,6 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
         databaseName = globalState.getDatabaseName();
         Class.forName("com.hazelcast.jdbc.Driver");
         Connection con = DriverManager.getConnection(CONN_STRING);
-        globalState.getState().logStatement(String.format("\\c %s;", ENTRY_DATABASE_NAME));
-        globalState.getState().logStatement("DROP DATABASE IF EXISTS " + databaseName);
-        createDatabaseCommand = getCreateDatabaseCommand(globalState);
-        globalState.getState().logStatement(createDatabaseCommand);
-        try (Statement s = con.createStatement()) {
-            s.execute("DROP DATABASE IF EXISTS " + databaseName);
-        }
-        try (Statement s = con.createStatement()) {
-            s.execute(createDatabaseCommand);
-        }
-        con.close();
-        int databaseIndex = entryURL.indexOf(entryPath) + 1;
-        String preDatabaseName = entryURL.substring(0, databaseIndex);
-        String postDatabaseName = entryURL.substring(databaseIndex + ENTRY_DATABASE_NAME.length());
-        testURL = preDatabaseName + databaseName + postDatabaseName;
-        globalState.getState().logStatement(String.format("\\c %s;", databaseName));
-        con = DriverManager.getConnection(CONN_STRING);
         return new SQLConnection(con);
     }
 
@@ -208,6 +191,7 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
                 SQLQueryAdapter createTable = HazelcastTableGenerator.generate(tableName, globalState.getSchema(),
                         generateOnlyKnown, globalState);
                 globalState.executeStatement(createTable);
+                globalState.getManager().incrementCreateQueryCount();
             } catch (IgnoreMeException e) {
 
             }

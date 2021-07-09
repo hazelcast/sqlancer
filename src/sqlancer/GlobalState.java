@@ -1,5 +1,7 @@
 package sqlancer;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.sql.HazelcastSqlException;
 import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLancerResultSet;
 import sqlancer.common.schema.AbstractSchema;
@@ -106,6 +108,7 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
     public boolean executeStatement(Query<C> q, String... fills) throws Exception {
         ExecutionTimer timer = executePrologue(q);
         boolean success = manager.execute(q, fills);
+//        Hazelcast.bootstrappedInstance().getSql().execute(q.getQueryString());
         executeEpilogue(q, success, timer);
         return success;
     }
@@ -130,6 +133,9 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
         if (schema == null) {
             try {
                 updateSchema();
+            } catch (HazelcastSqlException hazelcastSqlException) {
+                hazelcastSqlException.printStackTrace();
+                throw new AssertionError();
             } catch (Exception e) {
                 throw new AssertionError();
             }

@@ -65,26 +65,39 @@ public class HazelcastTableGenerator {
 
     private SQLQueryAdapter generate() {
         columnCanHavePrimaryKey = true;
-        sb.append("CREATE");
-        if (Randomly.getBoolean()) {
-            sb.append(" ");
-            isTemporaryTable = true;
-            sb.append(Randomly.fromOptions("TEMPORARY", "TEMP"));
-        } else if (Randomly.getBoolean()) {
-            sb.append(" UNLOGGED");
-        }
-        sb.append(" TABLE");
+        sb.append("CREATE MAPPING");
         if (Randomly.getBoolean()) {
             sb.append(" IF NOT EXISTS");
         }
         sb.append(" ");
         sb.append(tableName);
+        sb.append(" ");
+
         if (Randomly.getBoolean() && !newSchema.getDatabaseTables().isEmpty()) {
             createLike();
         } else {
             createStandard();
         }
+
+        sb.append(" ");
+
+        addType();
+        addOptions();
+
         return new SQLQueryAdapter(sb.toString(), errors, true);
+    }
+
+    private void addType() {
+        sb.append("TYPE IMap");
+        //TODO: Add other: Kafka, File
+        sb.append(" ");
+    }
+
+    private void addOptions() {
+        //TODO: Add options for other TYPEs
+        sb.append("OPTIONS ( " +
+                "'keyFormat'='bigint', " +
+                "'valueFormat'='json')");
     }
 
     private void createStandard() throws AssertionError {
@@ -106,12 +119,13 @@ public class HazelcastTableGenerator {
             errors.add("unsupported ON COMMIT and foreign key combination");
             errors.add("ERROR: invalid ON DELETE action for foreign key constraint containing generated column");
             errors.add("exclusion constraints are not supported on partitioned tables");
-            HazelcastCommon.addTableConstraints(columnHasPrimaryKey, sb, table, globalState, errors);
+//            HazelcastCommon.addTableConstraints(columnHasPrimaryKey, sb, table, globalState, errors);
         }
         sb.append(")");
         generateInherits();
-        generatePartitionBy();
-        HazelcastCommon.generateWith(sb, globalState, errors);
+        //TODO: Enable PARTITION BY
+//        generatePartitionBy();
+//        HazelcastCommon.generateWith(sb, globalState, errors);
         if (Randomly.getBoolean() && isTemporaryTable) {
             sb.append(" ON COMMIT ");
             sb.append(Randomly.fromOptions("PRESERVE ROWS", "DELETE ROWS", "DROP"));
@@ -140,14 +154,18 @@ public class HazelcastTableGenerator {
         sb.append(name);
         sb.append(" ");
         HazelcastDataType type = HazelcastDataType.getRandomType();
-        boolean serial = HazelcastCommon.appendDataType(type, sb, true, generateOnlyKnown, globalState.getCollates());
+        //TODO: This needs to be able to retrieve collations
+        //https://database.guide/how-to-return-a-list-of-available-collations-in-postgresql/
+//        List<String> collates  = globalState.getCollates();
+        List<String> collates  = null;
+        boolean serial = HazelcastCommon.appendDataType(type, sb, false, generateOnlyKnown, collates);
         HazelcastColumn c = new HazelcastColumn(name, type);
         c.setTable(table);
         columnsToBeAdded.add(c);
         sb.append(" ");
-        if (Randomly.getBoolean()) {
-            createColumnConstraint(type, serial);
-        }
+//        if (Randomly.getBoolean()) {
+//            createColumnConstraint(type, serial);
+//        }
     }
 
     private void generatePartitionBy() {

@@ -25,6 +25,14 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
     @Override
     public void setConnection(SQLConnection con) {
         super.setConnection(con);
+        //TODO: Investigate & uncomment
+//        try {
+//            this.opClasses = getOpclasses(getConnection());
+//            this.operators = getOperators(getConnection());
+//            this.collates = getCollnames(getConnection());
+//        } catch (SQLException e) {
+//            throw new AssertionError(e);
+//        }
     }
 
     private List<String> getCollnames(SQLConnection con) throws SQLException {

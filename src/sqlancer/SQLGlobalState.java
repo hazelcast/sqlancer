@@ -17,7 +17,9 @@ public abstract class SQLGlobalState<O extends DBMSSpecificOptions<?>, S extends
     @Override
     protected void executeEpilogue(Query<?> q, boolean success, ExecutionTimer timer) throws Exception {
         boolean logExecutionTime = getOptions().logExecutionTime();
-        if (success && getOptions().printSucceedingStatements()) {
+        //TODO: Revert
+//        if (success && getOptions().printSucceedingStatements()) {
+        if (success) {
             System.out.println(q.getQueryString());
         }
         if (logExecutionTime) {

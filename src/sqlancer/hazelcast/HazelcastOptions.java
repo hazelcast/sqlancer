@@ -23,7 +23,7 @@ public class HazelcastOptions implements DBMSSpecificOptions<HazelcastOptions.Ha
     @Parameter(names = "--bulk-insert", description = "Specifies whether INSERT statements should be issued in bulk", arity = 1)
     public boolean allowBulkInsert;
 
-    @Parameter(names = "--oracle", description = "Specifies which test oracle should be used for PostgreSQL")
+    @Parameter(names = "--oracle", description = "Specifies which test oracle should be used for Hazelcast SQL")
     public List<HazelcastOracleFactory> oracle = Arrays.asList(HazelcastOracleFactory.QUERY_PARTITIONING);
 
     @Parameter(names = "--test-collations", description = "Specifies whether to test different collations", arity = 1)

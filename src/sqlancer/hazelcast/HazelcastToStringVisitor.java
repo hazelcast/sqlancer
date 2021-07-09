@@ -205,32 +205,28 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
             // TODO: append TEXT, CHAR
             sb.append(Randomly.fromOptions("VARCHAR"));
             break;
-        case REAL:
-            sb.append("FLOAT");
-            break;
+//        case REAL:
+//            sb.append("FLOAT");
+//            break;
         case DECIMAL:
             sb.append("DECIMAL");
             break;
         case FLOAT:
             sb.append("REAL");
             break;
-        case RANGE:
-            sb.append("int4range");
-            break;
-        case MONEY:
-            sb.append("MONEY");
-            break;
-        case INET:
-            sb.append("INET");
-            break;
-        case BIT:
-            sb.append("BIT");
+//        case RANGE:
+//            sb.append("int4range");
+//            break;
+//        case INET:
+//            sb.append("INET");
+//            break;
+//        case BIT:
+//            sb.append("BIT");
             // if (Randomly.getBoolean()) {
             // sb.append("(");
             // sb.append(Randomly.getNotCachedInteger(1, 100));
             // sb.append(")");
             // }
-            break;
         default:
             throw new AssertionError(cast.getType());
         }
