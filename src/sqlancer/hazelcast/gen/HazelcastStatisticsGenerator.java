@@ -21,7 +21,7 @@ public final class HazelcastStatisticsGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE STATISTICS ");
         if (Randomly.getBoolean()) {
-            sb.append(" IF NOT EXISTS");
+            sb.append("IF NOT EXISTS");
         }
         HazelcastTable randomTable = globalState.getSchema().getRandomTable(t -> !t.isView()); // TODO materialized view
         if (randomTable.getColumns().size() < 2) {

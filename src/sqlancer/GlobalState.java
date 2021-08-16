@@ -108,7 +108,6 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
     public boolean executeStatement(Query<C> q, String... fills) throws Exception {
         ExecutionTimer timer = executePrologue(q);
         boolean success = manager.execute(q, fills);
-//        Hazelcast.bootstrappedInstance().getSql().execute(q.getQueryString());
         executeEpilogue(q, success, timer);
         return success;
     }
@@ -130,16 +129,13 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
     }
 
     public S getSchema() {
-        if (schema == null) {
-            try {
-                updateSchema();
-            } catch (HazelcastSqlException hazelcastSqlException) {
-                hazelcastSqlException.printStackTrace();
-                throw new AssertionError();
-            } catch (Exception e) {
-                throw new AssertionError();
-            }
+        try {
+            updateSchema();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new AssertionError();
         }
+
         return schema;
     }
 

@@ -47,13 +47,13 @@ public class HazelcastBinaryArithmeticOperation extends BinaryOperatorNode<Hazel
                 return applyBitOperation(left, right, (l, r) -> r == 0 ? -1 : l % r);
 
             }
-        },
-        EXPONENTIATION("^") {
-            @Override
-            public HazelcastConstant apply(HazelcastConstant left, HazelcastConstant right) {
-                return null;
-            }
         };
+//        EXPONENTIATION("^") {
+//            @Override
+//            public HazelcastConstant apply(HazelcastConstant left, HazelcastConstant right) {
+//                return null;
+//            }
+//        };
 
         private String textRepresentation;
 

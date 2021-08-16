@@ -347,12 +347,17 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
 //    }
 
     private enum TextExpression {
-        CAST, FUNCTION, CONCAT, COLLATE
+        CAST,
+        FUNCTION,
+        CONCAT,
+        COLLATE
     }
 
     private HazelcastExpression generateTextExpression(int depth) {
         TextExpression option;
-        List<TextExpression> validOptions = new ArrayList<>(Arrays.asList(TextExpression.values()));
+        //TODO: Enable CAST
+        List<TextExpression> validOptions = new ArrayList<>(Arrays.asList(TextExpression.FUNCTION,
+                TextExpression.CONCAT, TextExpression.COLLATE));
         if (expectedResult) {
             validOptions.remove(TextExpression.COLLATE);
         }

@@ -1,6 +1,7 @@
 package sqlancer.hazelcast;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import sqlancer.IgnoreMeException;
@@ -110,7 +111,7 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     }
 
     public static HazelcastDataType getColumnType(String typeString) {
-        switch (typeString) {
+        switch (typeString.toLowerCase()) {
             case "smallint":
             case "integer":
             case "bigint":
@@ -121,6 +122,8 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
             case "character":
             case "character varying":
             case "name":
+                return HazelcastDataType.TEXT;
+            case "varchar":
                 return HazelcastDataType.TEXT;
             case "numeric":
                 return HazelcastDataType.DECIMAL;
@@ -217,44 +220,68 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     public static HazelcastSchema fromConnection(SQLConnection con, String databaseName) throws SQLException {
         try {
             List<HazelcastTable> databaseTables = new ArrayList<>();
-            Iterator<SqlRow> iterator = Hazelcast.bootstrappedInstance().getSql().execute("SELECT * " +
-                    "FROM information_schema.mappings;").iterator();
-            int mappings = 0;
-            while(iterator.hasNext()) {
-                System.out.println("mapping_name: " + iterator.next().getObject("mapping_name"));
-                System.out.println("mapping_type: " + iterator.next().getObject("mapping_type"));
-                System.out.println("mapping_schema: " + iterator.next().getObject("mapping_schema"));
-                mappings++;
-            }
+//            int mappings = 0;
+//            try {
+//                Iterator<SqlRow> iterator = HazelcastGlobalState.executeStatementSilently("SELECT * FROM information_schema.mappings;").iterator();
+//                while(iterator.hasNext()) {
+//                    SqlRow sqlRow = iterator.next();
+//                    mappings++;
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//            System.out.println("Current created mappings: " + mappings);
 
-            System.out.println("Current created mappings: " + mappings);
-            try (Statement s = con.createStatement()) {
-                try (ResultSet rs = s.executeQuery(
-                     "SELECT mapping_name, mapping_type, mapping_schema " +
-                             "FROM information_schema.mappings " +
-                             "ORDER BY mapping_name")
-                ) {
-                    while (rs.next()) {
-                        String tableName = rs.getString("mapping_name");
-                        String tableTypeSchema = rs.getString("mapping_schema");
-                        //TODO: Temporarily hardcoded to 'true'. Find out how to get proper value.
-                        boolean isInsertable = true;
-                        boolean isView = tableName.startsWith("v"); // tableTypeStr.contains("VIEW") ||
-                        // tableTypeStr.contains("LOCAL TEMPORARY") &&
-                        // !isInsertable;
-                        HazelcastTable.TableType tableType = getTableType(tableTypeSchema);
-                        List<HazelcastColumn> databaseColumns = getTableColumns(con, tableName);
-                        List<HazelcastIndex> indexes = getIndexes(con, tableName);
-                        List<HazelcastStatisticsObject> statistics = getStatistics(con);
-                        HazelcastTable t = new HazelcastTable(tableName, databaseColumns, indexes, tableType, statistics,
-                                isView, isInsertable);
-                        for (HazelcastColumn c : databaseColumns) {
-                            c.setTable(t);
-                        }
-                        databaseTables.add(t);
-                    }
+            Iterator<SqlRow> sqlRowIterator = HazelcastGlobalState.executeStatementSilently("SELECT * FROM information_schema.mappings;").iterator();
+            while (sqlRowIterator.hasNext()) {
+                SqlRow sqlRow = sqlRowIterator.next();
+                String tableName = sqlRow.getObject("table_name");
+                String tableTypeSchema = sqlRow.getObject("table_schema");
+                //TODO: Temporarily hardcoded to 'true'. Find out how to get proper value.
+                boolean isInsertable = true;
+                boolean isView = tableName.startsWith("v"); // tableTypeStr.contains("VIEW") ||
+                // tableTypeStr.contains("LOCAL TEMPORARY") &&
+                // !isInsertable;
+                HazelcastTable.TableType tableType = getTableType(tableTypeSchema);
+                List<HazelcastColumn> databaseColumns = getTableColumns(con, tableName);
+//                        List<HazelcastIndex> indexes = getIndexes(con, tableName);
+                List<HazelcastIndex> indexes = new ArrayList<>();
+//                        List<HazelcastStatisticsObject> statistics = getStatistics(con);
+                List<HazelcastStatisticsObject> statistics = new ArrayList<>();
+                HazelcastTable t = new HazelcastTable(tableName, databaseColumns, indexes, tableType, statistics,
+                        isView, isInsertable);
+                for (HazelcastColumn c : databaseColumns) {
+                    c.setTable(t);
                 }
+                databaseTables.add(t);
             }
+//            try (Statement s = con.createStatement()) {
+//                try (ResultSet rs = s.executeQuery(
+//                     "SELECT * FROM information_schema.mappings;")
+//                ) {
+//                    while (rs.next()) {
+//                        String tableName = rs.getString("mapping_name");
+//                        String tableTypeSchema = rs.getString("mapping_schema");
+//                        //TODO: Temporarily hardcoded to 'true'. Find out how to get proper value.
+//                        boolean isInsertable = true;
+//                        boolean isView = tableName.startsWith("v"); // tableTypeStr.contains("VIEW") ||
+//                        // tableTypeStr.contains("LOCAL TEMPORARY") &&
+//                        // !isInsertable;
+//                        HazelcastTable.TableType tableType = getTableType(tableTypeSchema);
+//                        List<HazelcastColumn> databaseColumns = getTableColumns(con, tableName);
+////                        List<HazelcastIndex> indexes = getIndexes(con, tableName);
+//                        List<HazelcastIndex> indexes = new ArrayList<>();
+////                        List<HazelcastStatisticsObject> statistics = getStatistics(con);
+//                        List<HazelcastStatisticsObject> statistics = new ArrayList<>();
+//                        HazelcastTable t = new HazelcastTable(tableName, databaseColumns, indexes, tableType, statistics,
+//                                isView, isInsertable);
+//                        for (HazelcastColumn c : databaseColumns) {
+//                            c.setTable(t);
+//                        }
+//                        databaseTables.add(t);
+//                    }
+//                }
+//            }
             return new HazelcastSchema(databaseTables, databaseName);
         } catch (SQLIntegrityConstraintViolationException e) {
             throw new AssertionError(e);
@@ -303,18 +330,28 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
 
     protected static List<HazelcastColumn> getTableColumns(SQLConnection con, String tableName) throws SQLException {
         List<HazelcastColumn> columns = new ArrayList<>();
-        try (Statement s = con.createStatement()) {
-            try (ResultSet rs = s
-                    .executeQuery("select column_name, data_type from INFORMATION_SCHEMA.COLUMNS where table_name = '"
-                            + tableName + "' ORDER BY column_name")) {
-                while (rs.next()) {
-                    String columnName = rs.getString("column_name");
-                    String dataType = rs.getString("data_type");
-                    HazelcastColumn c = new HazelcastColumn(columnName, getColumnType(dataType));
-                    columns.add(c);
-                }
-            }
+        Iterator<SqlRow> iterator = HazelcastGlobalState.executeStatementSilently("select column_name, data_type from information_schema.columns where table_name = '"
+                + tableName + "' ORDER BY column_name").iterator();
+        while (iterator.hasNext()) {
+            SqlRow sqlRow = iterator.next();
+            String columnName = sqlRow.getObject("column_name");
+            String dataType = sqlRow.getObject("data_type");
+            HazelcastColumn c = new HazelcastColumn(columnName, getColumnType(dataType));
+            columns.add(c);
         }
+
+//        try (Statement s = con.createStatement()) {
+//            try (ResultSet rs = s
+//                    .executeQuery("select column_name, data_type from information_schema.columns where table_name = '"
+//                            + tableName + "' ORDER BY column_name")) {
+//                while (rs.next()) {
+//                    String columnName = rs.getString("table_name");
+//                    String dataType = rs.getString("data_type");
+//                    HazelcastColumn c = new HazelcastColumn(columnName, getColumnType(dataType));
+//                    columns.add(c);
+//                }
+//            }
+//        }
         return columns;
     }
 

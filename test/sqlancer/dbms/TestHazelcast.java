@@ -2,10 +2,10 @@ package sqlancer.dbms;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import sqlancer.Main;
+import sqlancer.hazelcast.HazelcastInstanceManager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -17,7 +17,7 @@ public class TestHazelcast {
 
     @BeforeAll
     public static void initHazelcast() {
-        member = Hazelcast.bootstrappedInstance();
+        member = HazelcastInstanceManager.getInstance();
     }
 
     @Test
@@ -28,17 +28,6 @@ public class TestHazelcast {
                         "--num-threads", "1", "--num-queries", TestConfig.NUM_QUERIES, "hazelcast", "--test-collations",
                         "false" }));
 
-
-//        assertEquals(0,
-//                Main.executeMain(new String[] { "--random-seed", "0", "--timeout-seconds", TestConfig.SECONDS,
-//                        "--num-threads", "1", "--print-statements", "true", "--print-succeeding-statements", "true",
-//                        "--num-queries", TestConfig.NUM_QUERIES, "hazelcast", "--test-collations", "false"}));
-    }
-
-    @AfterAll
-    public static void tearDown(){
-        System.out.println("Shut down");
-        member.shutdown();
     }
 
 }

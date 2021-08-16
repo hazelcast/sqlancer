@@ -73,11 +73,14 @@ public class HazelcastTableGenerator {
         sb.append(tableName);
         sb.append(" ");
 
-        if (Randomly.getBoolean() && !newSchema.getDatabaseTables().isEmpty()) {
-            createLike();
-        } else {
-            createStandard();
-        }
+        //TODO: Like is not supported
+//        if (Randomly.getBoolean() && !newSchema.getDatabaseTables().isEmpty()) {
+//            createLike();
+//        } else {
+//            createStandard();
+//        }
+
+        createStandard();
 
         sb.append(" ");
 
@@ -122,15 +125,17 @@ public class HazelcastTableGenerator {
 //            HazelcastCommon.addTableConstraints(columnHasPrimaryKey, sb, table, globalState, errors);
         }
         sb.append(")");
-        generateInherits();
+        //TODO: Enable INHERITS
+//        generateInherits();
         //TODO: Enable PARTITION BY
 //        generatePartitionBy();
 //        HazelcastCommon.generateWith(sb, globalState, errors);
-        if (Randomly.getBoolean() && isTemporaryTable) {
-            sb.append(" ON COMMIT ");
-            sb.append(Randomly.fromOptions("PRESERVE ROWS", "DELETE ROWS", "DROP"));
-            sb.append(" ");
-        }
+        //TODO: Enable ON COMMIT
+//        if (Randomly.getBoolean() && isTemporaryTable) {
+//            sb.append(" ON COMMIT ");
+//            sb.append(Randomly.fromOptions("PRESERVE ROWS", "DELETE ROWS", "DROP"));
+//            sb.append(" ");
+//        }
     }
 
     private void createLike() {

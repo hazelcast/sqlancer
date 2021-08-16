@@ -1,5 +1,8 @@
 package sqlancer.hazelcast;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlService;
 import sqlancer.Randomly;
 import sqlancer.SQLConnection;
 import sqlancer.SQLGlobalState;
@@ -7,7 +10,12 @@ import sqlancer.SQLGlobalState;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, HazelcastSchema> {
 
@@ -121,4 +129,20 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
         return this.allowedFunctionTypes;
     }
 
+    public static SqlResult executeStatement(String query){
+        System.out.println(query);
+        return executeStatementSilently(query);
+    }
+
+    public static SqlResult executeStatementSilently(String query){
+        return getHazelcast().getSql().execute(query);
+    }
+
+    public static HazelcastInstance getHazelcast() {
+        return HazelcastInstanceManager.getInstance();
+    }
+
+    public static SqlService getHazelcastSql() {
+        return getHazelcast().getSql();
+    }
 }

@@ -11,6 +11,7 @@ import sqlancer.hazelcast.HazelcastSchema.HazelcastDataType;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastTable;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class HazelcastUpdateGenerator {
 
@@ -32,7 +33,9 @@ public final class HazelcastUpdateGenerator {
         errors.add("multiple assignments to same column"); // view whose columns refer to a column in the referenced
                                                            // table multiple times
         errors.add("new row violates check option for view");
-        List<HazelcastColumn> columns = randomTable.getRandomNonEmptyColumnSubset();
+        final String keyColumn = "__key";   // __key column cannot be updated
+        List<HazelcastColumn> columns = randomTable.getRandomNonEmptyColumnSubset().stream()
+                .filter(column -> !column.getName().equals(keyColumn)).collect(Collectors.toList());
         HazelcastCommon.addCommonInsertUpdateErrors(errors);
 
         for (int i = 0; i < columns.size(); i++) {
@@ -46,8 +49,8 @@ public final class HazelcastUpdateGenerator {
                 HazelcastExpression constant = HazelcastExpressionGenerator.generateConstant(globalState.getRandomly(),
                         column.getType());
                 sb.append(HazelcastVisitor.asString(constant));
-            } else if (Randomly.getBoolean()) {
-                sb.append("DEFAULT");
+//            } else if (Randomly.getBoolean()) {
+//                sb.append("DEFAULT");
             } else {
                 sb.append("(");
                 HazelcastExpression expr = HazelcastExpressionGenerator.generateExpression(globalState,

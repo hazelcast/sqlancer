@@ -178,18 +178,31 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
 
     @Override
     public void visit(HazelcastCastOperation cast) {
-        if (Randomly.getBoolean()) {
-            sb.append("CAST(");
-            visit(cast.getExpression());
-            sb.append(" AS ");
-            appendType(cast);
-            sb.append(")");
-        } else {
-            sb.append("(");
-            visit(cast.getExpression());
-            sb.append(")::");
-            appendType(cast);
-        }
+        //TODO: enable
+//        if (Randomly.getBoolean()) {
+//            sb.append("CAST(");
+//            visit(cast.getExpression());
+//            sb.append(" AS ");
+//            appendType(cast);
+//            sb.append(")");
+//        } else {
+//            sb.append("(");
+//            visit(cast.getExpression());
+//            sb.append(")::");
+//            appendType(cast);
+//        }
+//        if (Randomly.getBoolean()) {
+        sb.append("CAST(");
+        visit(cast.getExpression());
+        sb.append(" AS ");
+        appendType(cast);
+        sb.append(")");
+//        } else {
+//            sb.append("(");
+//            visit(cast.getExpression());
+//            sb.append(")::");
+//            appendType(cast);
+//        }
     }
 
     private void appendType(HazelcastCastOperation cast) {
