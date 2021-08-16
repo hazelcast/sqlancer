@@ -1,42 +1,42 @@
-package sqlancer.postgres.gen;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+package sqlancer.hazelcast.gen;
 
 import sqlancer.Randomly;
 import sqlancer.common.DBMSCommon;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
-import sqlancer.postgres.PostgresGlobalState;
-import sqlancer.postgres.PostgresSchema;
-import sqlancer.postgres.PostgresSchema.PostgresColumn;
-import sqlancer.postgres.PostgresSchema.PostgresDataType;
-import sqlancer.postgres.PostgresSchema.PostgresTable;
-import sqlancer.postgres.PostgresVisitor;
-import sqlancer.postgres.ast.PostgresExpression;
+import sqlancer.hazelcast.HazelcastGlobalState;
+import sqlancer.hazelcast.HazelcastSchema;
+import sqlancer.hazelcast.HazelcastVisitor;
+import sqlancer.hazelcast.ast.HazelcastExpression;
+import sqlancer.hazelcast.HazelcastSchema.HazelcastColumn;
+import sqlancer.hazelcast.HazelcastSchema.HazelcastDataType;
+import sqlancer.hazelcast.HazelcastSchema.HazelcastTable;
 
-public class PostgresTableGenerator {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class HazelcastTableGenerator {
 
     private final String tableName;
     private boolean columnCanHavePrimaryKey;
     private boolean columnHasPrimaryKey;
     private final StringBuilder sb = new StringBuilder();
     private boolean isTemporaryTable;
-    private final PostgresSchema newSchema;
-    private final List<PostgresColumn> columnsToBeAdded = new ArrayList<>();
+    private final HazelcastSchema newSchema;
+    private final List<HazelcastColumn> columnsToBeAdded = new ArrayList<>();
     protected final ExpectedErrors errors = new ExpectedErrors();
-    private final PostgresTable table;
+    private final HazelcastTable table;
     private final boolean generateOnlyKnown;
-    private final PostgresGlobalState globalState;
+    private final HazelcastGlobalState globalState;
 
-    public PostgresTableGenerator(String tableName, PostgresSchema newSchema, boolean generateOnlyKnown,
-            PostgresGlobalState globalState) {
+    public HazelcastTableGenerator(String tableName, HazelcastSchema newSchema, boolean generateOnlyKnown,
+                                   HazelcastGlobalState globalState) {
         this.tableName = tableName;
         this.newSchema = newSchema;
         this.generateOnlyKnown = generateOnlyKnown;
         this.globalState = globalState;
-        table = new PostgresTable(tableName, columnsToBeAdded, null, null, null, false, false);
+        table = new HazelcastTable(tableName, columnsToBeAdded, null, null, null, false, false);
         errors.add("invalid input syntax for");
         errors.add("is not unique");
         errors.add("integer out of range");
@@ -54,37 +54,53 @@ public class PostgresTableGenerator {
         errors.add("no collation was derived for partition key column");
         errors.add("inherits from generated column but specifies identity");
         errors.add("inherits from generated column but specifies default");
-        PostgresCommon.addCommonExpressionErrors(errors);
-        PostgresCommon.addCommonTableErrors(errors);
+        HazelcastCommon.addCommonExpressionErrors(errors);
+        HazelcastCommon.addCommonTableErrors(errors);
     }
 
-    public static SQLQueryAdapter generate(String tableName, PostgresSchema newSchema, boolean generateOnlyKnown,
-            PostgresGlobalState globalState) {
-        return new PostgresTableGenerator(tableName, newSchema, generateOnlyKnown, globalState).generate();
+    public static SQLQueryAdapter generate(String tableName, HazelcastSchema newSchema, boolean generateOnlyKnown,
+                                           HazelcastGlobalState globalState) {
+        return new HazelcastTableGenerator(tableName, newSchema, generateOnlyKnown, globalState).generate();
     }
 
     private SQLQueryAdapter generate() {
         columnCanHavePrimaryKey = true;
-        sb.append("CREATE");
-        if (Randomly.getBoolean()) {
-            sb.append(" ");
-            isTemporaryTable = true;
-            sb.append(Randomly.fromOptions("TEMPORARY", "TEMP"));
-        } else if (Randomly.getBoolean()) {
-            sb.append(" UNLOGGED");
-        }
-        sb.append(" MAPPING");
+        sb.append("CREATE MAPPING");
         if (Randomly.getBoolean()) {
             sb.append(" IF NOT EXISTS");
         }
         sb.append(" ");
         sb.append(tableName);
-        if (Randomly.getBoolean() && !newSchema.getDatabaseTables().isEmpty()) {
-            createLike();
-        } else {
-            createStandard();
-        }
+        sb.append(" ");
+
+        //TODO: Like is not supported
+//        if (Randomly.getBoolean() && !newSchema.getDatabaseTables().isEmpty()) {
+//            createLike();
+//        } else {
+//            createStandard();
+//        }
+
+        createStandard();
+
+        sb.append(" ");
+
+        addType();
+        addOptions();
+
         return new SQLQueryAdapter(sb.toString(), errors, true);
+    }
+
+    private void addType() {
+        sb.append("TYPE IMap");
+        //TODO: Add other: Kafka, File
+        sb.append(" ");
+    }
+
+    private void addOptions() {
+        //TODO: Add options for other TYPEs
+        sb.append("OPTIONS ( " +
+                "'keyFormat'='bigint', " +
+                "'valueFormat'='json')");
     }
 
     private void createStandard() throws AssertionError {
@@ -106,17 +122,20 @@ public class PostgresTableGenerator {
             errors.add("unsupported ON COMMIT and foreign key combination");
             errors.add("ERROR: invalid ON DELETE action for foreign key constraint containing generated column");
             errors.add("exclusion constraints are not supported on partitioned tables");
-            PostgresCommon.addTableConstraints(columnHasPrimaryKey, sb, table, globalState, errors);
+//            HazelcastCommon.addTableConstraints(columnHasPrimaryKey, sb, table, globalState, errors);
         }
         sb.append(")");
-        generateInherits();
-        generatePartitionBy();
-        PostgresCommon.generateWith(sb, globalState, errors);
-        if (Randomly.getBoolean() && isTemporaryTable) {
-            sb.append(" ON COMMIT ");
-            sb.append(Randomly.fromOptions("PRESERVE ROWS", "DELETE ROWS", "DROP"));
-            sb.append(" ");
-        }
+        //TODO: Enable INHERITS
+//        generateInherits();
+        //TODO: Enable PARTITION BY
+//        generatePartitionBy();
+//        HazelcastCommon.generateWith(sb, globalState, errors);
+        //TODO: Enable ON COMMIT
+//        if (Randomly.getBoolean() && isTemporaryTable) {
+//            sb.append(" ON COMMIT ");
+//            sb.append(Randomly.fromOptions("PRESERVE ROWS", "DELETE ROWS", "DROP"));
+//            sb.append(" ");
+//        }
     }
 
     private void createLike() {
@@ -139,15 +158,19 @@ public class PostgresTableGenerator {
     private void createColumn(String name) throws AssertionError {
         sb.append(name);
         sb.append(" ");
-        PostgresDataType type = PostgresDataType.getRandomType();
-        boolean serial = PostgresCommon.appendDataType(type, sb, true, generateOnlyKnown, globalState.getCollates());
-        PostgresColumn c = new PostgresColumn(name, type);
+        HazelcastDataType type = HazelcastDataType.getRandomType();
+        //TODO: This needs to be able to retrieve collations
+        //https://database.guide/how-to-return-a-list-of-available-collations-in-postgresql/
+//        List<String> collates  = globalState.getCollates();
+        List<String> collates  = null;
+        boolean serial = HazelcastCommon.appendDataType(type, sb, false, generateOnlyKnown, collates);
+        HazelcastColumn c = new HazelcastColumn(name, type);
         c.setTable(table);
         columnsToBeAdded.add(c);
         sb.append(" ");
-        if (Randomly.getBoolean()) {
-            createColumnConstraint(type, serial);
-        }
+//        if (Randomly.getBoolean()) {
+//            createColumnConstraint(type, serial);
+//        }
     }
 
     private void generatePartitionBy() {
@@ -168,14 +191,14 @@ public class PostgresTableGenerator {
         errors.add("unsupported UNIQUE constraint with partition key definition");
         errors.add("does not accept data type");
         int n = partitionOption.contentEquals("LIST") ? 1 : Randomly.smallNumber() + 1;
-        PostgresCommon.addCommonExpressionErrors(errors);
+        HazelcastCommon.addCommonExpressionErrors(errors);
         for (int i = 0; i < n; i++) {
             if (i != 0) {
                 sb.append(", ");
             }
             sb.append("(");
-            PostgresExpression expr = PostgresExpressionGenerator.generateExpression(globalState, columnsToBeAdded);
-            sb.append(PostgresVisitor.asString(expr));
+            HazelcastExpression expr = HazelcastExpressionGenerator.generateExpression(globalState, columnsToBeAdded);
+            sb.append(HazelcastVisitor.asString(expr));
             sb.append(")");
             if (Randomly.getBoolean()) {
                 sb.append(globalState.getRandomOpclass());
@@ -204,7 +227,7 @@ public class PostgresTableGenerator {
         NULL_OR_NOT_NULL, UNIQUE, PRIMARY_KEY, DEFAULT, CHECK, GENERATED
     };
 
-    private void createColumnConstraint(PostgresDataType type, boolean serial) {
+    private void createColumnConstraint(HazelcastDataType type, boolean serial) {
         List<ColumnConstraint> constraintSubset = Randomly.nonEmptySubset(ColumnConstraint.values());
         if (Randomly.getBoolean()) {
             // make checks constraints less likely
@@ -218,7 +241,7 @@ public class PostgresTableGenerator {
             // otherwise: ERROR: both default and identity specified for column
             constraintSubset.remove(Randomly.fromOptions(ColumnConstraint.GENERATED, ColumnConstraint.DEFAULT));
         }
-        if (constraintSubset.contains(ColumnConstraint.GENERATED) && type != PostgresDataType.INT) {
+        if (constraintSubset.contains(ColumnConstraint.GENERATED) && type != HazelcastDataType.INT) {
             // otherwise: ERROR: identity column type must be smallint, integer, or bigint
             constraintSubset.remove(ColumnConstraint.GENERATED);
         }
@@ -244,7 +267,7 @@ public class PostgresTableGenerator {
             case DEFAULT:
                 sb.append("DEFAULT");
                 sb.append(" (");
-                sb.append(PostgresVisitor.asString(PostgresExpressionGenerator.generateExpression(globalState, type)));
+                sb.append(HazelcastVisitor.asString(HazelcastExpressionGenerator.generateExpression(globalState, type)));
                 sb.append(")");
                 // CREATE TEMPORARY TABLE t1(c0 smallint DEFAULT ('566963878'));
                 errors.add("out of range");
@@ -252,8 +275,8 @@ public class PostgresTableGenerator {
                 break;
             case CHECK:
                 sb.append("CHECK (");
-                sb.append(PostgresVisitor.asString(PostgresExpressionGenerator.generateExpression(globalState,
-                        columnsToBeAdded, PostgresDataType.BOOLEAN)));
+                sb.append(HazelcastVisitor.asString(HazelcastExpressionGenerator.generateExpression(globalState,
+                        columnsToBeAdded, HazelcastDataType.BOOLEAN)));
                 sb.append(")");
                 if (Randomly.getBoolean()) {
                     sb.append(" NO INHERIT");
@@ -264,8 +287,8 @@ public class PostgresTableGenerator {
                 sb.append("GENERATED ");
                 if (Randomly.getBoolean()) {
                     sb.append(" ALWAYS AS (");
-                    sb.append(PostgresVisitor.asString(
-                            PostgresExpressionGenerator.generateExpression(globalState, columnsToBeAdded, type)));
+                    sb.append(HazelcastVisitor.asString(
+                            HazelcastExpressionGenerator.generateExpression(globalState, columnsToBeAdded, type)));
                     sb.append(") STORED");
                     errors.add("A generated column cannot reference another generated column.");
                     errors.add("cannot use generated column in partition key");

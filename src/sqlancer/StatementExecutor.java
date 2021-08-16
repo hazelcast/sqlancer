@@ -3,7 +3,9 @@ package sqlancer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import sqlancer.common.query.Query;
+import sqlancer.hazelcast.HazelcastGlobalState;
 
 public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends AbstractAction<G>> {
 
@@ -67,7 +69,13 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
                 int nrTries = 0;
                 do {
                     query = nextAction.getQuery(globalState);
-                    success = globalState.executeStatement(query);
+                    try {
+                        HazelcastGlobalState.executeStatement(query.getQueryString());
+                        success = true;
+                    } catch (HazelcastSqlException e) {
+                        success = false;
+                        e.printStackTrace();
+                    }
                 } while (nextAction.canBeRetried() && !success
                         && nrTries++ < globalState.getOptions().getNrStatementRetryCount());
             } catch (IgnoreMeException e) {

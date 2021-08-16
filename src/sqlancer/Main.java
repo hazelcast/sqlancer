@@ -17,10 +17,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.JCommander.Builder;
 
+import com.mysql.cj.log.LogFactory;
 import sqlancer.citus.CitusProvider;
 import sqlancer.clickhouse.ClickHouseProvider;
 import sqlancer.cockroachdb.CockroachDBProvider;
@@ -29,6 +31,7 @@ import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLancerResultSet;
 import sqlancer.duckdb.DuckDBProvider;
 import sqlancer.h2.H2Provider;
+import sqlancer.hazelcast.HazelcastProvider;
 import sqlancer.mariadb.MariaDBProvider;
 import sqlancer.mysql.MySQLProvider;
 import sqlancer.postgres.PostgresProvider;
@@ -39,6 +42,7 @@ public final class Main {
 
     public static final File LOG_DIRECTORY = new File("logs");
     public static volatile AtomicLong nrQueries = new AtomicLong();
+    public static volatile AtomicLong nrCreateQueries = new AtomicLong();
     public static volatile AtomicLong nrDatabases = new AtomicLong();
     public static volatile AtomicLong nrSuccessfulActions = new AtomicLong();
     public static volatile AtomicLong nrUnsuccessfulActions = new AtomicLong();
@@ -247,6 +251,10 @@ public final class Main {
 
         public void incrementSelectQueryCount() {
             Main.nrQueries.addAndGet(1);
+        }
+
+        public void incrementCreateQueryCount() {
+            Main.nrCreateQueries.addAndGet(1);
         }
 
         public void incrementCreateDatabase() {
@@ -554,6 +562,7 @@ public final class Main {
         providers.add(new ClickHouseProvider());
         providers.add(new DuckDBProvider());
         providers.add(new H2Provider());
+        providers.add(new HazelcastProvider());
         return providers;
     }
 
@@ -572,6 +581,7 @@ public final class Main {
 
             private long timeMillis = System.currentTimeMillis();
             private long lastNrQueries;
+            private long lastNrCreateQueries;
             private long lastNrDbs;
 
             {
@@ -581,9 +591,15 @@ public final class Main {
             @Override
             public void run() {
                 long elapsedTimeMillis = System.currentTimeMillis() - timeMillis;
+
                 long currentNrQueries = nrQueries.get();
                 long nrCurrentQueries = currentNrQueries - lastNrQueries;
                 double throughput = nrCurrentQueries / (elapsedTimeMillis / 1000d);
+
+                long currentNrCreateQueries = nrCreateQueries.get();
+                long nrCurrentCreateQueries = currentNrCreateQueries - lastNrCreateQueries;
+                double createThroughput = nrCurrentCreateQueries / (elapsedTimeMillis / 1000d);
+
                 long currentNrDbs = nrDatabases.get();
                 long nrCurrentDbs = currentNrDbs - lastNrDbs;
                 double throughputDbs = nrCurrentDbs / (elapsedTimeMillis / 1000d);
@@ -592,8 +608,12 @@ public final class Main {
                 DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                 Date date = new Date();
                 System.out.println(String.format(
-                        "[%s] Executed %d queries (%d queries/s; %.2f/s dbs, successful statements: %2d%%). Threads shut down: %d.",
+                        "[%s] Executed %d SELECT queries (%d queries/s; %.2f/s dbs, successful statements: %2d%%). Threads shut down: %d.",
                         dateFormat.format(date), currentNrQueries, (int) throughput, throughputDbs,
+                        successfulStatementsRatio, threadsShutdown));
+                System.out.println(String.format(
+                        "[%s] Executed %d CREATE queries (%d queries/s; %.2f/s dbs, successful statements: %2d%%). Threads shut down: %d.",
+                        dateFormat.format(date), currentNrCreateQueries, (int) createThroughput, throughputDbs,
                         successfulStatementsRatio, threadsShutdown));
                 timeMillis = System.currentTimeMillis();
                 lastNrQueries = currentNrQueries;

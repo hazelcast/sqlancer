@@ -1,5 +1,7 @@
 package sqlancer;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.sql.HazelcastSqlException;
 import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLancerResultSet;
 import sqlancer.common.schema.AbstractSchema;
@@ -127,13 +129,13 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
     }
 
     public S getSchema() {
-        if (schema == null) {
-            try {
-                updateSchema();
-            } catch (Exception e) {
-                throw new AssertionError();
-            }
+        try {
+            updateSchema();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new AssertionError();
         }
+
         return schema;
     }
 
