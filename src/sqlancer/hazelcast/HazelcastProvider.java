@@ -41,8 +41,8 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
 
     public enum Action implements AbstractAction<HazelcastGlobalState> {
 //        ANALYZE(HazelcastAnalyzeGenerator::create), //
-        ALTER_TABLE(g -> HazelcastAlterTableGenerator.create(g.getSchema().getRandomTable(t -> !t.isView()), g,
-                generateOnlyKnown)), //
+//        ALTER_TABLE(g -> HazelcastAlterTableGenerator.create(g.getSchema().getRandomTable(t -> !t.isView()), g,
+//                generateOnlyKnown)), //
 //        CLUSTER(HazelcastClusterGenerator::create), //
 //        COMMIT(g -> {
 //            SQLQueryAdapter query;
@@ -61,7 +61,7 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
 //        DISCARD(HazelcastDiscardGenerator::create), //
 //        DROP_INDEX(HazelcastDropIndexGenerator::create), //
         INSERT(HazelcastInsertGenerator::insert), //
-        UPDATE(HazelcastUpdateGenerator::create), //
+        UPDATE(HazelcastUpdateGenerator::create); //
 //        TRUNCATE(HazelcastTruncateGenerator::create), //
 //        VACUUM(HazelcastVacuumGenerator::create), //
 //        REINDEX(HazelcastReindexGenerator::create), //
@@ -75,15 +75,17 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
 //        }), //
 //        RESET_ROLE((g) -> new SQLQueryAdapter("RESET ROLE")), //
 //        COMMENT_ON(HazelcastCommentGenerator::generate), //
-        RESET((g) -> new SQLQueryAdapter("RESET ALL") /*
+//        RESET((g) -> new SQLQueryAdapter("RESET ALL")
+        /*
                                                        * https://www.postgresql.org/docs/devel/sql-reset.html TODO: also
                                                        * configuration parameter
-                                                       */);//
-//        NOTIFY(HazelcastNotifyGenerator::createNotify), //
-//        LISTEN((g) -> HazelcastNotifyGenerator.createListen()), //
-//        UNLISTEN((g) -> HazelcastNotifyGenerator.createUnlisten()), //
-//        CREATE_SEQUENCE(HazelcastSequenceGenerator::createSequence), //
-//        CREATE_VIEW(HazelcastViewGenerator::create);
+                                                       ;//
+        NOTIFY(HazelcastNotifyGenerator::createNotify), //
+        LISTEN((g) -> HazelcastNotifyGenerator.createListen()), //
+        UNLISTEN((g) -> HazelcastNotifyGenerator.createUnlisten()), //
+        CREATE_SEQUENCE(HazelcastSequenceGenerator::createSequence), //
+        CREATE_VIEW(HazelcastViewGenerator::create);
+        */
 
         private final SQLQueryProvider<HazelcastGlobalState> sqlQueryProvider;
 
@@ -115,13 +117,13 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
 //        case COMMIT:
 //            nrPerformed = r.getInteger(0, 0);
 //            break;
-        case ALTER_TABLE:
-            nrPerformed = r.getInteger(0, 5);
-            break;
+//        case ALTER_TABLE:
+//            nrPerformed = r.getInteger(0, 5);
+//            break;
 //        case REINDEX:
-        case RESET:
-            nrPerformed = r.getInteger(0, 3);
-            break;
+//        case RESET:
+//            nrPerformed = r.getInteger(0, 3);
+//            break;
         case DELETE:
 //        case RESET_ROLE:
 //        case SET:

@@ -15,6 +15,7 @@ public final class Randomly {
     private static int cacheSize = 100;
 
     private final List<Long> cachedLongs = new ArrayList<>();
+    private final List<Short> cachedShorts = new ArrayList<>();
     private final List<String> cachedStrings = new ArrayList<>();
     private final List<Double> cachedDoubles = new ArrayList<>();
     private final List<byte[]> cachedBytes = new ArrayList<>();
@@ -41,11 +42,25 @@ public final class Randomly {
         }
     }
 
+    private void addToCache(short val) {
+        if (useCaching && cachedShorts.size() < cacheSize && !cachedShorts.contains(val)) {
+            cachedShorts.add(val);
+        }
+    }
+
     private Long getFromLongCache() {
         if (!useCaching || cachedLongs.isEmpty()) {
             return null;
         } else {
             return Randomly.fromList(cachedLongs);
+        }
+    }
+
+    private Short getFromShortCache() {
+        if (!useCaching || cachedShorts.isEmpty()) {
+            return null;
+        } else {
+            return Randomly.fromList(cachedShorts);
         }
     }
 
@@ -190,6 +205,19 @@ public final class Randomly {
         }
     }
 
+    public short getSmallInt() {
+        if (cacheProbability()) {
+            Short s = getFromShortCache();
+            if (s != null) {
+                return s;
+            }
+        }
+        short nextShort = (short) getThreadRandom().get().nextInt(Short.MAX_VALUE);
+        addToCache(nextShort);
+        return nextShort;
+
+    }
+
     public enum StringGenerationStrategy {
 
         NUMERIC {
@@ -200,7 +228,6 @@ public final class Randomly {
 
         },
         ALPHANUMERIC {
-
             @Override
             public String getString(Randomly r) {
                 return getStringOfAlphabet(r, ALPHANUMERIC_ALPHABET);
@@ -209,7 +236,6 @@ public final class Randomly {
 
         },
         ALPHANUMERIC_SPECIALCHAR {
-
             @Override
             public String getString(Randomly r) {
                 return getStringOfAlphabet(r, ALPHANUMERIC_SPECIALCHAR_ALPHABET);
@@ -249,7 +275,7 @@ public final class Randomly {
                     }
                 }
                 while (Randomly.getBooleanWithSmallProbability()) {
-                    String[][] pairs = { { "{", "}" }, { "[", "]" }, { "(", ")" } };
+                    String[][] pairs = {{"{", "}"}, {"[", "]"}, {"(", ")"}};
                     int idx = (int) Randomly.getNotCachedInteger(0, pairs.length);
                     int left = (int) Randomly.getNotCachedInteger(0, sb.length() + 1);
                     sb.insert(left, pairs[idx][0]);

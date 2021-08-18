@@ -110,7 +110,14 @@ public class HazelcastBinaryComparisonOperation extends BinaryOperatorNode<Hazel
         public abstract HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal);
 
         public static HazelcastBinaryComparisonOperator getRandom() {
-            return Randomly.fromOptions(HazelcastBinaryComparisonOperator.values());
+            return Randomly.fromOptions(
+                    HazelcastBinaryComparisonOperator.EQUALS,
+                    HazelcastBinaryComparisonOperator.GREATER,
+                    HazelcastBinaryComparisonOperator.GREATER_EQUALS,
+                    HazelcastBinaryComparisonOperator.LESS,
+                    HazelcastBinaryComparisonOperator.LESS_EQUALS,
+                    HazelcastBinaryComparisonOperator.NOT_EQUALS
+                    );
         }
 
     }

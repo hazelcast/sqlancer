@@ -30,11 +30,11 @@ public final class HazelcastDeleteGenerator {
             sb.append(HazelcastVisitor.asString(HazelcastExpressionGenerator.generateExpression(globalState,
                     table.getColumns(), HazelcastDataType.BOOLEAN)));
         }
-        if (Randomly.getBoolean()) {
-            sb.append(" RETURNING ");
-            sb.append(HazelcastVisitor
-                    .asString(HazelcastExpressionGenerator.generateExpression(globalState, table.getColumns())));
-        }
+//        if (Randomly.getBoolean()) {
+//            sb.append(" RETURNING ");
+//            sb.append(HazelcastVisitor
+//                    .asString(HazelcastExpressionGenerator.generateExpression(globalState, table.getColumns())));
+//        }
         HazelcastCommon.addCommonExpressionErrors(errors);
         errors.add("out of range");
         errors.add("cannot cast");

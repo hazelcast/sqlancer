@@ -45,20 +45,21 @@ public final class HazelcastUpdateGenerator {
             HazelcastColumn column = columns.get(i);
             sb.append(column.getName());
             sb.append(" = ");
-            if (!Randomly.getBoolean()) {
+//            if (!Randomly.getBoolean()) {
                 HazelcastExpression constant = HazelcastExpressionGenerator.generateConstant(globalState.getRandomly(),
                         column.getType());
                 sb.append(HazelcastVisitor.asString(constant));
 //            } else if (Randomly.getBoolean()) {
 //                sb.append("DEFAULT");
-            } else {
-                sb.append("(");
-                HazelcastExpression expr = HazelcastExpressionGenerator.generateExpression(globalState,
-                        randomTable.getColumns(), column.getType());
-                // caused by casts
-                sb.append(HazelcastVisitor.asString(expr));
-                sb.append(")");
-            }
+//            }
+//            } else {
+//                sb.append("(");
+//                HazelcastExpression expr = HazelcastExpressionGenerator.generateExpression(globalState,
+//                        randomTable.getColumns(), column.getType());
+//                // caused by casts
+//                sb.append(HazelcastVisitor.asString(expr));
+//                sb.append(")");
+//            }
         }
         errors.add("invalid input syntax for ");
         errors.add("operator does not exist: text = boolean");

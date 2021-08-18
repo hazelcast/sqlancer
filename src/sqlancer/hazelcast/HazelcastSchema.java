@@ -23,6 +23,7 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
 
     public enum HazelcastDataType {
         INT,
+        SMALLINT,
         BOOLEAN,
         TEXT,
         DECIMAL,
@@ -113,6 +114,7 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     public static HazelcastDataType getColumnType(String typeString) {
         switch (typeString.toLowerCase()) {
             case "smallint":
+                return HazelcastDataType.SMALLINT;
             case "integer":
             case "bigint":
                 return HazelcastDataType.INT;
@@ -122,7 +124,6 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
             case "character":
             case "character varying":
             case "name":
-                return HazelcastDataType.TEXT;
             case "varchar":
                 return HazelcastDataType.TEXT;
             case "numeric":
