@@ -114,6 +114,7 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
             s = globalState.getConnection().createStatement();
         }
         ResultSet result;
+        System.out.println(query);
         try {
             if (fills.length > 0) {
                 result = ((PreparedStatement) s).executeQuery();

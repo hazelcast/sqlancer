@@ -244,7 +244,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
 
     public HazelcastExpression generateExpression(int depth, HazelcastDataType originalType) {
         HazelcastDataType dataType = originalType;
-        if (dataType == HazelcastDataType.FLOAT && Randomly.getBoolean()) {
+        if (dataType == HazelcastDataType.FLOAT) {
             dataType = HazelcastDataType.INT;
         }
         if (!filterColumns(dataType).isEmpty() && Randomly.getBoolean()) {
@@ -402,7 +402,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
 
     private HazelcastExpression generateIntExpression(int depth) {
         IntExpression option;
-        option = Randomly.fromOptions(IntExpression.values());
+        option = Randomly.fromOptions(IntExpression.BINARY_ARITHMETIC_EXPRESSION, IntExpression.UNARY_OPERATION, IntExpression.FUNCTION);
         switch (option) {
             case CAST:
                 return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(HazelcastDataType.INT));
@@ -455,13 +455,9 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
         // }
         switch (type) {
             case INT:
-                if (Randomly.getBooleanWithSmallProbability()) {
-                    return HazelcastConstant.createTextConstant(String.valueOf(r.getInteger()));
-                } else {
-                    return HazelcastConstant.createIntConstant(r.getInteger());
-                }
+                return HazelcastConstant.createIntConstant(r.getInteger());
             case SMALLINT:
-                HazelcastConstant.createIntConstant(r.getSmallInt());
+                return HazelcastConstant.createIntConstant(r.getSmallInt());
             case BOOLEAN:
                 if (Randomly.getBooleanWithSmallProbability() && !HazelcastProvider.generateOnlyKnown) {
                     return HazelcastConstant

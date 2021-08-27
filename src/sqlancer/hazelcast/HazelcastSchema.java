@@ -35,14 +35,14 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
 
         public static HazelcastDataType getRandomType() {
             List<HazelcastDataType> dataTypes = new ArrayList<>(Arrays.asList(INT, BOOLEAN, TEXT));
-            if (HazelcastProvider.generateOnlyKnown) {
-                dataTypes.remove(HazelcastDataType.DECIMAL);
-                dataTypes.remove(HazelcastDataType.FLOAT);
-                dataTypes.remove(HazelcastDataType.REAL);
-                dataTypes.remove(HazelcastDataType.INET);
-                dataTypes.remove(HazelcastDataType.RANGE);
-                dataTypes.remove(HazelcastDataType.BIT);
-            }
+//            if (HazelcastProvider.generateOnlyKnown) {
+//                dataTypes.remove(HazelcastDataType.DECIMAL);
+//                dataTypes.remove(HazelcastDataType.FLOAT);
+//                dataTypes.remove(HazelcastDataType.REAL);
+//                dataTypes.remove(HazelcastDataType.INET);
+//                dataTypes.remove(HazelcastDataType.RANGE);
+//                dataTypes.remove(HazelcastDataType.BIT);
+//            }
             return Randomly.fromList(dataTypes);
         }
     }
@@ -239,7 +239,6 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                 String tableName = sqlRow.getObject("table_name");
                 String tableTypeSchema = sqlRow.getObject("table_schema");
                 //TODO: Temporarily hardcoded to 'true'. Find out how to get proper value.
-                boolean isInsertable = true;
                 boolean isView = tableName.startsWith("v"); // tableTypeStr.contains("VIEW") ||
                 // tableTypeStr.contains("LOCAL TEMPORARY") &&
                 // !isInsertable;
@@ -248,6 +247,7 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
 //                        List<HazelcastIndex> indexes = getIndexes(con, tableName);
                 List<HazelcastIndex> indexes = new ArrayList<>();
 //                        List<HazelcastStatisticsObject> statistics = getStatistics(con);
+                boolean isInsertable = databaseColumns.size() > 1;
                 List<HazelcastStatisticsObject> statistics = new ArrayList<>();
                 HazelcastTable t = new HazelcastTable(tableName, databaseColumns, indexes, tableType, statistics,
                         isView, isInsertable);

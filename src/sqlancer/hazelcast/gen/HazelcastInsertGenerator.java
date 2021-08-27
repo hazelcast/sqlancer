@@ -4,11 +4,13 @@ import sqlancer.Randomly;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.hazelcast.HazelcastGlobalState;
+import sqlancer.hazelcast.HazelcastSchema;
 import sqlancer.hazelcast.HazelcastVisitor;
 import sqlancer.hazelcast.ast.HazelcastExpression;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastColumn;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastTable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,6 +40,7 @@ public final class HazelcastInsertGenerator {
         sb.append("INSERT INTO ");
         sb.append(table.getName());
         List<HazelcastColumn> columns = table.getRandomNonEmptyColumnSubset();
+        addKeyColumnIfNotInTheList(columns);
         sb.append("(");
         sb.append(columns.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
         sb.append(")");
@@ -77,16 +80,16 @@ public final class HazelcastInsertGenerator {
                 insertRow(globalState, sb, columns, n == 1);
             }
         }
-        if (Randomly.getBooleanWithRatherLowProbability()) {
-            sb.append(" ON CONFLICT ");
-            if (Randomly.getBoolean()) {
-                sb.append("(");
-                sb.append(table.getRandomColumn().getName());
-                sb.append(")");
-                errors.add("there is no unique or exclusion constraint matching the ON CONFLICT specification");
-            }
-            sb.append(" DO NOTHING");
-        }
+//        if (Randomly.getBooleanWithRatherLowProbability()) {
+//            sb.append(" ON CONFLICT ");
+//            if (Randomly.getBoolean()) {
+//                sb.append("(");
+//                sb.append(table.getRandomColumn().getName());
+//                sb.append(")");
+//                errors.add("there is no unique or exclusion constraint matching the ON CONFLICT specification");
+//            }
+//            sb.append(" DO NOTHING");
+//        }
         errors.add("duplicate key value violates unique constraint");
         errors.add("identity column defined as GENERATED ALWAYS");
         errors.add("out of range");
@@ -121,6 +124,16 @@ public final class HazelcastInsertGenerator {
             }
         }
         sb.append(")");
+    }
+
+    /**
+     * In any INSERT expression we need to specify __key
+     * @param input
+     */
+    private static void addKeyColumnIfNotInTheList(List<HazelcastColumn> input) {
+        if(input.stream().noneMatch(column -> column.getName().equals("__key"))) {
+            input.add(new HazelcastColumn("__key", HazelcastSchema.HazelcastDataType.INT));
+        }
     }
 
 }

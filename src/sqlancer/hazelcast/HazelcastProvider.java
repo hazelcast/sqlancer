@@ -211,8 +211,8 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
                     }
                 });
         se.executeStatements();
-        globalState.executeStatement(new SQLQueryAdapter("COMMIT", true));
-        globalState.executeStatement(new SQLQueryAdapter("SET SESSION statement_timeout = 5000;\n"));
+//        globalState.executeStatement(new SQLQueryAdapter("COMMIT", true));
+//        globalState.executeStatement(new SQLQueryAdapter("SET SESSION statement_timeout = 5000;\n"));
     }
 
     private String getCreateDatabaseCommand(HazelcastGlobalState state) {
