@@ -42,8 +42,11 @@ public class HazelcastTLPAggregateOracle extends HazelcastTLPBase implements Tes
 
     protected void aggregateCheck() throws SQLException {
         HazelcastAggregateFunction aggregateFunction = Randomly.fromOptions(HazelcastAggregateFunction.MAX,
-                HazelcastAggregateFunction.MIN, HazelcastAggregateFunction.SUM, HazelcastAggregateFunction.BIT_AND,
-                HazelcastAggregateFunction.BIT_OR, HazelcastAggregateFunction.BOOL_AND, HazelcastAggregateFunction.BOOL_OR,
+                HazelcastAggregateFunction.MIN, HazelcastAggregateFunction.SUM,
+//                HazelcastAggregateFunction.BIT_AND,
+//                HazelcastAggregateFunction.BIT_OR,
+//                HazelcastAggregateFunction.BOOL_AND,
+//                HazelcastAggregateFunction.BOOL_OR,
                 HazelcastAggregateFunction.COUNT);
         HazelcastAggregate aggregate = gen.generateArgsForAggregate(aggregateFunction.getRandomReturnType(),
                 aggregateFunction);
@@ -127,10 +130,10 @@ public class HazelcastTLPAggregateOracle extends HazelcastTLPBase implements Tes
         switch (aggregate.getFunction()) {
         case SUM:
         case COUNT:
-        case BIT_AND:
-        case BIT_OR:
-        case BOOL_AND:
-        case BOOL_OR:
+//        case BIT_AND:
+//        case BIT_OR:
+//        case BOOL_AND:
+//        case BOOL_OR:
         case MAX:
         case MIN:
             return aliasArgs(Arrays.asList(aggregate));

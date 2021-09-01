@@ -109,19 +109,15 @@ public final class HazelcastInsertGenerator {
             if (i != 0) {
                 sb.append(", ");
             }
-            if (!Randomly.getBooleanWithSmallProbability() || !canBeDefault) {
-                HazelcastExpression generateConstant;
-                if (Randomly.getBoolean()) {
-                    generateConstant = HazelcastExpressionGenerator.generateConstant(globalState.getRandomly(),
-                            columns.get(i).getType());
-                } else {
-                    generateConstant = new HazelcastExpressionGenerator(globalState)
-                            .generateExpression(columns.get(i).getType());
-                }
-                sb.append(HazelcastVisitor.asString(generateConstant));
+            HazelcastExpression generateConstant;
+            if (Randomly.getBoolean()) {
+                generateConstant = HazelcastExpressionGenerator.generateConstant(globalState.getRandomly(),
+                        columns.get(i).getType());
             } else {
-                sb.append("DEFAULT");
+                generateConstant = new HazelcastExpressionGenerator(globalState)
+                        .generateExpression(columns.get(i).getType());
             }
+            sb.append(HazelcastVisitor.asString(generateConstant));
         }
         sb.append(")");
     }

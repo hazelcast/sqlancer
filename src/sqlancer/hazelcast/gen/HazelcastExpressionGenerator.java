@@ -141,7 +141,8 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     }
 
     private HazelcastExpression generateBooleanExpression(int depth) {
-        List<BooleanExpression> validOptions = new ArrayList<>(Arrays.asList(BooleanExpression.values()));
+        List<BooleanExpression> validOptions = new ArrayList<>(Arrays.asList(
+                BooleanExpression.LIKE, BooleanExpression.NOT, BooleanExpression.BETWEEN));
         if (HazelcastProvider.generateOnlyKnown) {
             validOptions.remove(BooleanExpression.SIMILAR_TO);
             validOptions.remove(BooleanExpression.POSIX_REGEX);
@@ -313,8 +314,8 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
 //        case RANGE:
 //        case REAL:
 //        case INET:
-                return HazelcastCompoundDataType.create(type);
             case TEXT: // TODO
+                return HazelcastCompoundDataType.create(type);
 //        case BIT:
 //            if (Randomly.getBoolean() || HazelcastProvider.generateOnlyKnown /*
 //                                                                             * The PQS implementation does not check for

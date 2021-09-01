@@ -52,13 +52,13 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
 
     @Override
     public void visit(HazelcastFromTable from) {
-        if (from.isOnly()) {
-            sb.append("ONLY ");
-        }
+//        if (from.isOnly()) {
+//            sb.append("ONLY ");
+//        }
         sb.append(from.getTable().getName());
-        if (!from.isOnly() && Randomly.getBoolean()) {
-            sb.append("*");
-        }
+//        if (!from.isOnly() && Randomly.getBoolean()) {
+//            sb.append("*");
+//        }
     }
 
     @Override

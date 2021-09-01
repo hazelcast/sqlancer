@@ -37,6 +37,10 @@ public final class HazelcastUpdateGenerator {
         List<HazelcastColumn> columns = randomTable.getRandomNonEmptyColumnSubset().stream()
                 .filter(column -> !column.getName().equals(keyColumn)).collect(Collectors.toList());
         HazelcastCommon.addCommonInsertUpdateErrors(errors);
+        //Skip running UPDATE query if table has only __key column
+        if (columns.size() < 1) {
+            return new SQLQueryAdapter("", errors, false);
+        }
 
         for (int i = 0; i < columns.size(); i++) {
             if (i != 0) {

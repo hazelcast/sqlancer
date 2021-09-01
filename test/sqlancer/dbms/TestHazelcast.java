@@ -24,7 +24,7 @@ public class TestHazelcast {
         assumeTrue(hazalcastIsAvailable);
         assertEquals(0,
                 Main.executeMain(new String[] { "--random-seed", "0", "--timeout-seconds", TestConfig.SECONDS,
-                        "--num-threads", "1", "--num-queries", TestConfig.NUM_QUERIES, "hazelcast", "--test-collations",
+                        "--num-threads", "4", "--num-queries", TestConfig.NUM_QUERIES, "hazelcast", "--test-collations",
                         "false" }));
 
     }

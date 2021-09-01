@@ -100,7 +100,7 @@ public class HazelcastTableGenerator {
         //TODO: Add options for other TYPEs
         sb.append("OPTIONS ( " +
                 "'keyFormat'='bigint', " +
-                "'valueFormat'='json')");
+                "'valueFormat'='json-flat')");
     }
 
     private void createStandard() throws AssertionError {

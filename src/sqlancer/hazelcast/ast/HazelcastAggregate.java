@@ -16,8 +16,11 @@ public class HazelcastAggregate extends FunctionNode<HazelcastAggregate.Hazelcas
 
     public enum HazelcastAggregateFunction {
         AVG(HazelcastDataType.INT, HazelcastDataType.FLOAT, HazelcastDataType.REAL, HazelcastDataType.DECIMAL),
-        BIT_AND(HazelcastDataType.INT), BIT_OR(HazelcastDataType.INT), BOOL_AND(HazelcastDataType.BOOLEAN),
-        BOOL_OR(HazelcastDataType.BOOLEAN), COUNT(HazelcastDataType.INT), EVERY(HazelcastDataType.BOOLEAN), MAX, MIN,
+//        BIT_AND(HazelcastDataType.INT),
+//        BIT_OR(HazelcastDataType.INT),
+//        BOOL_AND(HazelcastDataType.BOOLEAN),
+//        BOOL_OR(HazelcastDataType.BOOLEAN),
+        COUNT(HazelcastDataType.INT), EVERY(HazelcastDataType.BOOLEAN), MAX, MIN,
         // STRING_AGG
         SUM(HazelcastDataType.INT, HazelcastDataType.FLOAT, HazelcastDataType.REAL, HazelcastDataType.DECIMAL);
 
