@@ -73,7 +73,7 @@ public class PostgresTableGenerator {
         } else if (Randomly.getBoolean()) {
             sb.append(" UNLOGGED");
         }
-        sb.append(" MAPPING");
+        sb.append(" TABLE");
         if (Randomly.getBoolean()) {
             sb.append(" IF NOT EXISTS");
         }

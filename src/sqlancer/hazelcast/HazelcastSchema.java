@@ -33,6 +33,7 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
         BIT,
         INET;
 
+//        TODO: Add more data types
         public static HazelcastDataType getRandomType() {
             List<HazelcastDataType> dataTypes = new ArrayList<>(Arrays.asList(INT, BOOLEAN, TEXT));
 //            if (HazelcastProvider.generateOnlyKnown) {

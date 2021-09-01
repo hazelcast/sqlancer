@@ -9,7 +9,7 @@ import sqlancer.Main;
 
 public class TestPostgres {
 
-    String postgresAvailable = System.getenv("POSTGRES_AVAILABLE");
+    String postgresAvailable = "true";
     boolean postgresIsAvailable = postgresAvailable != null && postgresAvailable.equalsIgnoreCase("true");
 
     @Test
@@ -18,7 +18,7 @@ public class TestPostgres {
         assertEquals(0,
                 Main.executeMain(new String[] { "--random-seed", "0", "--timeout-seconds", TestConfig.SECONDS,
                         "--num-threads", "4", "--num-queries", TestConfig.NUM_QUERIES, "postgres", "--test-collations",
-                        "false" }));
+                        "false"}));
     }
 
     @Test
