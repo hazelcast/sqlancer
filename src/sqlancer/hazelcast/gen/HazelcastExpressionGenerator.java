@@ -299,6 +299,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
                     return generateTextExpression(depth);
                 case DECIMAL:
                 case FLOAT:
+                    return generateIntExpression(depth);
                 default:
                     throw new AssertionError(dataType);
             }
@@ -460,12 +461,12 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
             case SMALLINT:
                 return HazelcastConstant.createIntConstant(r.getSmallInt());
             case BOOLEAN:
-                if (Randomly.getBooleanWithSmallProbability() && !HazelcastProvider.generateOnlyKnown) {
-                    return HazelcastConstant
-                            .createTextConstant(Randomly.fromOptions("TR", "TRUE", "FA", "FALSE", "0", "1", "ON", "off"));
-                } else {
-                    return HazelcastConstant.createBooleanConstant(Randomly.getBoolean());
-                }
+//                if (Randomly.getBooleanWithSmallProbability() && !HazelcastProvider.generateOnlyKnown) {
+//                    return HazelcastConstant
+//                            .createTextConstant(Randomly.fromOptions("TR", "TRUE", "FA", "FALSE", "0", "1", "ON", "off"));
+//                } else {
+                return HazelcastConstant.createBooleanConstant(Randomly.getBoolean());
+//                }
             case TEXT:
                 return HazelcastConstant.createTextConstant(r.getString());
             case DECIMAL:

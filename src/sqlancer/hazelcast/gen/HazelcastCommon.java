@@ -133,7 +133,7 @@ public final class HazelcastCommon {
                 serial = true;
                 sb.append(Randomly.fromOptions("serial", "bigserial"));
             } else {
-                sb.append(Randomly.fromOptions("smallint", "integer", "bigint"));
+                sb.append(Randomly.fromOptions("smallint", "integer"));
             }
             break;
         case TEXT:
