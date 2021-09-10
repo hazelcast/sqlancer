@@ -128,7 +128,7 @@ public final class HazelcastInsertGenerator {
      */
     private static void addKeyColumnIfNotInTheList(List<HazelcastColumn> input) {
         if(input.stream().noneMatch(column -> column.getName().equals("__key"))) {
-            input.add(new HazelcastColumn("__key", HazelcastSchema.HazelcastDataType.INT));
+            input.add(new HazelcastColumn("__key", HazelcastSchema.HazelcastDataType.INTEGER));
         }
     }
 

@@ -24,11 +24,11 @@ public class HazelcastPrefixOperation implements HazelcastExpression {
                 }
             }
         },
-        UNARY_PLUS("+", HazelcastDataType.INT) {
+        UNARY_PLUS("+", HazelcastDataType.INTEGER) {
 
             @Override
             public HazelcastDataType getExpressionType() {
-                return HazelcastDataType.INT;
+                return HazelcastDataType.INTEGER;
             }
 
             @Override
@@ -38,11 +38,11 @@ public class HazelcastPrefixOperation implements HazelcastExpression {
             }
 
         },
-        UNARY_MINUS("-", HazelcastDataType.INT) {
+        UNARY_MINUS("-", HazelcastDataType.INTEGER) {
 
             @Override
             public HazelcastDataType getExpressionType() {
-                return HazelcastDataType.INT;
+                return HazelcastDataType.INTEGER;
             }
 
             @Override

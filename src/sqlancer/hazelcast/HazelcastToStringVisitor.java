@@ -52,9 +52,6 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
 
     @Override
     public void visit(HazelcastFromTable from) {
-//        if (from.isOnly()) {
-//            sb.append("ONLY ");
-//        }
         sb.append(from.getTable().getName());
 //        if (!from.isOnly() && Randomly.getBoolean()) {
 //            sb.append("*");
@@ -72,21 +69,6 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
     @Override
     public void visit(HazelcastSelect s) {
         sb.append("SELECT ");
-        switch (s.getSelectOption()) {
-        case DISTINCT:
-            sb.append("DISTINCT ");
-            if (s.getDistinctOnClause() != null) {
-                sb.append("ON (");
-                visit(s.getDistinctOnClause());
-                sb.append(") ");
-            }
-            break;
-        case ALL:
-            sb.append(Randomly.fromOptions("ALL ", ""));
-            break;
-        default:
-            throw new AssertionError();
-        }
         if (s.getFetchColumns() == null) {
             sb.append("*");
         } else {
@@ -97,27 +79,28 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
 
         for (HazelcastJoin j : s.getJoinClauses()) {
             sb.append(" ");
+            //noinspection SwitchStatementWithTooFewBranches
             switch (j.getType()) {
-            case INNER:
-                if (Randomly.getBoolean()) {
-                    sb.append("INNER ");
-                }
-                sb.append("JOIN");
-                break;
-            case LEFT:
-                sb.append("LEFT OUTER JOIN");
-                break;
-            case RIGHT:
-                sb.append("RIGHT OUTER JOIN");
-                break;
-            case FULL:
-                sb.append("FULL OUTER JOIN");
-                break;
-            case CROSS:
-                sb.append("CROSS JOIN");
-                break;
-            default:
-                throw new AssertionError(j.getType());
+                case INNER:
+                    if (Randomly.getBoolean()) {
+                        sb.append("INNER ");
+                    }
+                    sb.append("JOIN");
+                    break;
+//                case LEFT:
+//                    sb.append("LEFT OUTER JOIN");
+//                    break;
+//                case RIGHT:
+//                    sb.append("RIGHT OUTER JOIN");
+//                    break;
+//                case FULL:
+//                    sb.append("FULL OUTER JOIN");
+//                    break;
+//                case CROSS:
+//                    sb.append("CROSS JOIN");
+//                    break;
+                default:
+                    throw new AssertionError(j.getType());
             }
             sb.append(" ");
             visit(j.getTableReference());
@@ -178,70 +161,58 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
 
     @Override
     public void visit(HazelcastCastOperation cast) {
-        //TODO: enable
-//        if (Randomly.getBoolean()) {
-//            sb.append("CAST(");
-//            visit(cast.getExpression());
-//            sb.append(" AS ");
-//            appendType(cast);
-//            sb.append(")");
-//        } else {
-//            sb.append("(");
-//            visit(cast.getExpression());
-//            sb.append(")::");
-//            appendType(cast);
-//        }
-//        if (Randomly.getBoolean()) {
-//        sb.append("CAST(");
-//        visit(cast.getExpression());
-//        sb.append(" AS ");
-//        appendType(cast);
-//        sb.append(")");
-//        } else {
-//            sb.append("(");
-//            visit(cast.getExpression());
-//            sb.append(")::");
-//            appendType(cast);
-//        }
+        if (Randomly.getBoolean()) {
+            sb.append("CAST(");
+            visit(cast.getExpression());
+            sb.append(" AS ");
+            appendType(cast);
+            sb.append(")");
+        } else {
+            sb.append("(");
+            visit(cast.getExpression());
+            sb.append(")::");
+            appendType(cast);
+        }
+        if (Randomly.getBoolean()) {
+            sb.append("CAST(");
+            visit(cast.getExpression());
+            sb.append(" AS ");
+            appendType(cast);
+            sb.append(")");
+        } else {
+            sb.append("(");
+            visit(cast.getExpression());
+            sb.append(")::");
+            appendType(cast);
+        }
     }
 
     private void appendType(HazelcastCastOperation cast) {
         HazelcastCompoundDataType compoundType = cast.getCompoundType();
         switch (compoundType.getDataType()) {
-        case BOOLEAN:
-            sb.append("BOOLEAN");
-            break;
-        case INT: // TODO support also other int types
-            sb.append("INT");
-            break;
-        case TEXT:
-            // TODO: append TEXT, CHAR
-            sb.append(Randomly.fromOptions("VARCHAR"));
-            break;
-//        case REAL:
-//            sb.append("FLOAT");
-//            break;
-        case DECIMAL:
-            sb.append("DECIMAL");
-            break;
-        case FLOAT:
-            sb.append("REAL");
-            break;
-//        case RANGE:
-//            sb.append("int4range");
-//            break;
-//        case INET:
-//            sb.append("INET");
-//            break;
-//        case BIT:
-//            sb.append("BIT");
-            // if (Randomly.getBoolean()) {
-            // sb.append("(");
-            // sb.append(Randomly.getNotCachedInteger(1, 100));
-            // sb.append(")");
-            // }
-        default:
-            throw new AssertionError(cast.getType());
+            case BOOLEAN:
+                sb.append("BOOLEAN");
+                break;
+            case SMALLINT:
+                sb.append("SMALLINT");
+                break;
+            case INTEGER: // TODO support also other int types
+                sb.append("INTEGER");
+                break;
+            case VARCHAR:
+                sb.append("VARCHAR");
+                break;
+            case FLOAT:
+                sb.append("FLOAT");
+                break;
+            case DOUBLE:
+                sb.append("DOUBLE");
+                break;
+            case DECIMAL:
+                sb.append("DECIMAL");
+                break;
+            default:
+                throw new AssertionError(cast.getType());
         }
         Optional<Integer> size = compoundType.getSize();
         if (size.isPresent()) {
@@ -255,8 +226,8 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
     public void visit(HazelcastBetweenOperation op) {
         sb.append("(");
         visit(op.getExpr());
-        if (HazelcastProvider.generateOnlyKnown && op.getExpr().getExpressionType() == HazelcastDataType.TEXT
-                && op.getLeft().getExpressionType() == HazelcastDataType.TEXT) {
+        if (HazelcastProvider.generateOnlyKnown && op.getExpr().getExpressionType() == HazelcastDataType.VARCHAR
+                && op.getLeft().getExpressionType() == HazelcastDataType.VARCHAR) {
             sb.append(" COLLATE \"C\"");
         }
         sb.append(") BETWEEN ");
@@ -267,8 +238,8 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
         visit(op.getLeft());
         sb.append(") AND (");
         visit(op.getRight());
-        if (HazelcastProvider.generateOnlyKnown && op.getExpr().getExpressionType() == HazelcastDataType.TEXT
-                && op.getRight().getExpressionType() == HazelcastDataType.TEXT) {
+        if (HazelcastProvider.generateOnlyKnown && op.getExpr().getExpressionType() == HazelcastDataType.VARCHAR
+                && op.getRight().getExpressionType() == HazelcastDataType.VARCHAR) {
             sb.append(" COLLATE \"C\"");
         }
         sb.append(")");
@@ -302,33 +273,10 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
     }
 
     @Override
-    public void visit(HazelcastSimilarTo op) {
-        sb.append("(");
-        visit(op.getString());
-        sb.append(" SIMILAR TO ");
-        visit(op.getSimilarTo());
-        if (op.getEscapeCharacter() != null) {
-            visit(op.getEscapeCharacter());
-        }
-        sb.append(")");
-    }
-
-    @Override
     public void visit(HazelcastPOSIXRegularExpression op) {
         visit(op.getString());
         sb.append(op.getOp().getStringRepresentation());
         visit(op.getRegex());
-    }
-
-    @Override
-    public void visit(HazelcastCollate op) {
-        sb.append("(");
-        visit(op.getExpr());
-        sb.append(" COLLATE ");
-        sb.append('"');
-        sb.append(op.getCollate());
-        sb.append('"');
-        sb.append(")");
     }
 
     @Override

@@ -8,21 +8,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @see https://www.sqlite.org/lang_aggfunc.html
- */
 public class HazelcastAggregate extends FunctionNode<HazelcastAggregate.HazelcastAggregateFunction, HazelcastExpression>
         implements HazelcastExpression {
 
     public enum HazelcastAggregateFunction {
-        AVG(HazelcastDataType.INT, HazelcastDataType.FLOAT, HazelcastDataType.REAL, HazelcastDataType.DECIMAL),
-//        BIT_AND(HazelcastDataType.INT),
-//        BIT_OR(HazelcastDataType.INT),
-//        BOOL_AND(HazelcastDataType.BOOLEAN),
-//        BOOL_OR(HazelcastDataType.BOOLEAN),
-        COUNT(HazelcastDataType.INT), EVERY(HazelcastDataType.BOOLEAN), MAX, MIN,
-        // STRING_AGG
-        SUM(HazelcastDataType.INT, HazelcastDataType.FLOAT, HazelcastDataType.REAL, HazelcastDataType.DECIMAL);
+        AVG(HazelcastDataType.INTEGER, HazelcastDataType.FLOAT, HazelcastDataType.DOUBLE, HazelcastDataType.DECIMAL),
+        COUNT(HazelcastDataType.INTEGER),
+        MAX,
+        MIN,
+        SUM(HazelcastDataType.INTEGER, HazelcastDataType.FLOAT, HazelcastDataType.DOUBLE, HazelcastDataType.DECIMAL);
 
         private HazelcastDataType[] supportedReturnTypes;
 

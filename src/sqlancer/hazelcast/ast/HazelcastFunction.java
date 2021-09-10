@@ -40,13 +40,13 @@ public class HazelcastFunction implements HazelcastExpression {
                     return HazelcastConstant.createNullConstant();
                 } else {
                     return HazelcastConstant
-                            .createIntConstant(Math.abs(evaluatedArgs[0].cast(HazelcastDataType.INT).asInt()));
+                            .createIntConstant(Math.abs(evaluatedArgs[0].cast(HazelcastDataType.INTEGER).asInt()));
                 }
             }
 
             @Override
             public boolean supportsReturnType(HazelcastDataType type) {
-                return type == HazelcastDataType.INT;
+                return type == HazelcastDataType.INTEGER;
             }
 
             @Override
@@ -63,18 +63,18 @@ public class HazelcastFunction implements HazelcastExpression {
                     return HazelcastConstant.createNullConstant();
                 } else {
                     String text = evaluatedArgs[0].asString();
-                    return HazelcastConstant.createTextConstant(text.toLowerCase());
+                    return HazelcastConstant.createVarcharConstant(text.toLowerCase());
                 }
             }
 
             @Override
             public boolean supportsReturnType(HazelcastDataType type) {
-                return type == HazelcastDataType.TEXT;
+                return type == HazelcastDataType.VARCHAR;
             }
 
             @Override
             public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return new HazelcastDataType[] { HazelcastDataType.TEXT };
+                return new HazelcastDataType[] { HazelcastDataType.VARCHAR };
             }
 
         },
@@ -90,12 +90,12 @@ public class HazelcastFunction implements HazelcastExpression {
 
             @Override
             public boolean supportsReturnType(HazelcastDataType type) {
-                return type == HazelcastDataType.INT;
+                return type == HazelcastDataType.INTEGER;
             }
 
             @Override
             public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return new HazelcastDataType[] { HazelcastDataType.TEXT};
+                return new HazelcastDataType[] { HazelcastDataType.VARCHAR};
             }
         },
         UPPER(1, "upper") {
@@ -106,18 +106,18 @@ public class HazelcastFunction implements HazelcastExpression {
                     return HazelcastConstant.createNullConstant();
                 } else {
                     String text = evaluatedArgs[0].asString();
-                    return HazelcastConstant.createTextConstant(text.toUpperCase());
+                    return HazelcastConstant.createVarcharConstant(text.toUpperCase());
                 }
             }
 
             @Override
             public boolean supportsReturnType(HazelcastDataType type) {
-                return type == HazelcastDataType.TEXT;
+                return type == HazelcastDataType.VARCHAR;
             }
 
             @Override
             public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return new HazelcastDataType[] { HazelcastDataType.TEXT };
+                return new HazelcastDataType[] { HazelcastDataType.VARCHAR };
             }
 
         },
@@ -174,7 +174,7 @@ public class HazelcastFunction implements HazelcastExpression {
 
             @Override
             public boolean supportsReturnType(HazelcastDataType type) {
-                return type == HazelcastDataType.INT;
+                return type == HazelcastDataType.INTEGER;
             }
 
             @Override
@@ -202,7 +202,7 @@ public class HazelcastFunction implements HazelcastExpression {
 
             @Override
             public boolean supportsReturnType(HazelcastDataType type) {
-                return type == HazelcastDataType.INT;
+                return type == HazelcastDataType.INTEGER;
             }
 
             @Override

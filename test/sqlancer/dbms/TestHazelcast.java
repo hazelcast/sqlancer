@@ -6,12 +6,14 @@ import org.junit.jupiter.api.Test;
 import sqlancer.Main;
 import sqlancer.hazelcast.HazelcastInstanceManager;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class TestHazelcast {
 
-    boolean hazalcastIsAvailable = true;
+    boolean hazelcastIsAvailable = true;
     private static HazelcastInstance member;
 
     @BeforeAll
@@ -21,11 +23,16 @@ public class TestHazelcast {
 
     @Test
     public void testHazelcast() {
-        assumeTrue(hazalcastIsAvailable);
+        assumeTrue(hazelcastIsAvailable);
         assertEquals(0,
-                Main.executeMain(new String[] { "--random-seed", "0", "--timeout-seconds", TestConfig.SECONDS,
-                        "--num-threads", "4", "--num-queries", TestConfig.NUM_QUERIES, "hazelcast", "--test-collations",
-                        "false" }));
+                Main.executeMain(
+                        "--random-seed", String.valueOf(ThreadLocalRandom.current().nextLong()),
+                        "--timeout-seconds", TestConfig.SECONDS,
+                        "--num-threads", "4",
+                        "--num-queries", TestConfig.NUM_QUERIES,
+                        "hazelcast", " --oracle", "PQS",
+                        "--test-collations", "false")
+        );
 
     }
 

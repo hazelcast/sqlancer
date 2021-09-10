@@ -62,8 +62,8 @@ public class HazelcastBinaryArithmeticOperation extends BinaryOperatorNode<Hazel
             if (left.isNull() || right.isNull()) {
                 return HazelcastConstant.createNullConstant();
             } else {
-                long leftVal = left.cast(HazelcastDataType.INT).asInt();
-                long rightVal = right.cast(HazelcastDataType.INT).asInt();
+                long leftVal = left.cast(HazelcastDataType.INTEGER).asInt();
+                long rightVal = right.cast(HazelcastDataType.INTEGER).asInt();
                 long value = op.apply(leftVal, rightVal);
                 return HazelcastConstant.createIntConstant(value);
             }
@@ -103,7 +103,7 @@ public class HazelcastBinaryArithmeticOperation extends BinaryOperatorNode<Hazel
 
     @Override
     public HazelcastDataType getExpressionType() {
-        return HazelcastDataType.INT;
+        return HazelcastDataType.INTEGER;
     }
 
 }

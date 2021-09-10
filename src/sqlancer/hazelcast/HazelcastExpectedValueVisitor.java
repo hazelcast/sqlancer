@@ -114,26 +114,10 @@ public final class HazelcastExpectedValueVisitor implements HazelcastVisitor {
     }
 
     @Override
-    public void visit(HazelcastSimilarTo op) {
-        print(op);
-        visit(op.getString());
-        visit(op.getSimilarTo());
-        if (op.getEscapeCharacter() != null) {
-            visit(op.getEscapeCharacter());
-        }
-    }
-
-    @Override
     public void visit(HazelcastPOSIXRegularExpression op) {
         print(op);
         visit(op.getString());
         visit(op.getRegex());
-    }
-
-    @Override
-    public void visit(HazelcastCollate op) {
-        print(op);
-        visit(op.getExpr());
     }
 
     @Override

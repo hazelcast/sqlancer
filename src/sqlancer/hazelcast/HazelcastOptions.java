@@ -15,7 +15,10 @@ import sqlancer.hazelcast.oracle.tlp.HazelcastTLPWhereOracle;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 @Parameters
 public class HazelcastOptions implements DBMSSpecificOptions<HazelcastOptions.HazelcastOracleFactory> {
@@ -24,7 +27,7 @@ public class HazelcastOptions implements DBMSSpecificOptions<HazelcastOptions.Ha
     public boolean allowBulkInsert;
 
     @Parameter(names = "--oracle", description = "Specifies which test oracle should be used for Hazelcast SQL")
-    public List<HazelcastOracleFactory> oracle = Arrays.asList(HazelcastOracleFactory.QUERY_PARTITIONING);
+    public List<HazelcastOracleFactory> oracle = singletonList(HazelcastOracleFactory.PQS);
 
     @Parameter(names = "--test-collations", description = "Specifies whether to test different collations", arity = 1)
     public boolean testCollations = true;

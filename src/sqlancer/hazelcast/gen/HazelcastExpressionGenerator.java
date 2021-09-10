@@ -36,7 +36,6 @@ import sqlancer.hazelcast.ast.HazelcastPostfixOperation;
 import sqlancer.hazelcast.ast.HazelcastPostfixOperation.PostfixOperator;
 import sqlancer.hazelcast.ast.HazelcastPrefixOperation;
 import sqlancer.hazelcast.ast.HazelcastPrefixOperation.PrefixOperator;
-import sqlancer.hazelcast.ast.HazelcastSimilarTo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -175,21 +174,16 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
             case FUNCTION:
                 return generateFunction(depth + 1, HazelcastDataType.BOOLEAN);
             case LIKE:
-                return new HazelcastLikeOperation(generateExpression(depth + 1, HazelcastDataType.TEXT),
-                        generateExpression(depth + 1, HazelcastDataType.TEXT));
+                return new HazelcastLikeOperation(generateExpression(depth + 1, HazelcastDataType.VARCHAR),
+                        generateExpression(depth + 1, HazelcastDataType.VARCHAR));
             case BETWEEN:
                 HazelcastDataType type = getMeaningfulType();
                 return new HazelcastBetweenOperation(generateExpression(depth + 1, type),
                         generateExpression(depth + 1, type), generateExpression(depth + 1, type), Randomly.getBoolean());
-            case SIMILAR_TO:
-                assert !expectedResult;
-                // TODO also generate the escape character
-                return new HazelcastSimilarTo(generateExpression(depth + 1, HazelcastDataType.TEXT),
-                        generateExpression(depth + 1, HazelcastDataType.TEXT), null);
             case POSIX_REGEX:
                 assert !expectedResult;
-                return new HazelcastPOSIXRegularExpression(generateExpression(depth + 1, HazelcastDataType.TEXT),
-                        generateExpression(depth + 1, HazelcastDataType.TEXT), POSIXRegex.getRandom());
+                return new HazelcastPOSIXRegularExpression(generateExpression(depth + 1, HazelcastDataType.VARCHAR),
+                        generateExpression(depth + 1, HazelcastDataType.VARCHAR), POSIXRegex.getRandom());
             default:
                 throw new AssertionError();
         }
@@ -222,8 +216,8 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     private HazelcastExpression getComparison(HazelcastExpression leftExpr, HazelcastExpression rightExpr) {
         HazelcastBinaryComparisonOperation op = new HazelcastBinaryComparisonOperation(leftExpr, rightExpr,
                 HazelcastBinaryComparisonOperation.HazelcastBinaryComparisonOperator.getRandom());
-        if (HazelcastProvider.generateOnlyKnown && op.getLeft().getExpressionType() == HazelcastDataType.TEXT
-                && op.getRight().getExpressionType() == HazelcastDataType.TEXT) {
+        if (HazelcastProvider.generateOnlyKnown && op.getLeft().getExpressionType() == HazelcastDataType.VARCHAR
+                && op.getRight().getExpressionType() == HazelcastDataType.VARCHAR) {
             return new HazelcastCollate(op, "C");
         }
         return op;
@@ -246,7 +240,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     public HazelcastExpression generateExpression(int depth, HazelcastDataType originalType) {
         HazelcastDataType dataType = originalType;
         if (dataType == HazelcastDataType.FLOAT) {
-            dataType = HazelcastDataType.INT;
+            dataType = HazelcastDataType.INTEGER;
         }
         if (!filterColumns(dataType).isEmpty() && Randomly.getBoolean()) {
             return potentiallyWrapInCollate(dataType, createColumnOfType(dataType));
@@ -256,7 +250,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     }
 
     private HazelcastExpression potentiallyWrapInCollate(HazelcastDataType dataType, HazelcastExpression exprInternal) {
-        if (dataType == HazelcastDataType.TEXT && HazelcastProvider.generateOnlyKnown) {
+        if (dataType == HazelcastDataType.VARCHAR && HazelcastProvider.generateOnlyKnown) {
             return new HazelcastCollate(exprInternal, "C");
         } else {
             return exprInternal;
@@ -291,11 +285,11 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
             switch (dataType) {
                 case BOOLEAN:
                     return generateBooleanExpression(depth);
-                case INT:
-                    return generateIntExpression(depth);
+                case TINYINT:
                 case SMALLINT:
+                case INTEGER:
                     return generateIntExpression(depth);
-                case TEXT:
+                case VARCHAR:
                     return generateTextExpression(depth);
                 case DECIMAL:
                 case FLOAT:
@@ -311,44 +305,14 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
             case BOOLEAN:
             case DECIMAL: // TODO
             case FLOAT:
-            case INT:
-//        case RANGE:
-//        case REAL:
-//        case INET:
-            case TEXT: // TODO
+            case INTEGER:
+            case VARCHAR: // TODO
                 return HazelcastCompoundDataType.create(type);
-//        case BIT:
-//            if (Randomly.getBoolean() || HazelcastProvider.generateOnlyKnown /*
-//                                                                             * The PQS implementation does not check for
-//                                                                             * size specifications
-//                                                                             */) {
-//                return HazelcastCompoundDataType.create(type);
-//            } else {
-//                return HazelcastCompoundDataType.create(type, (int) Randomly.getNotCachedInteger(1, 1000));
-//            }
             default:
                 throw new AssertionError(type);
         }
 
     }
-
-    private enum RangeExpression {
-        BINARY_OP;
-    }
-
-//    private HazelcastExpression generateRangeExpression(int depth) {
-//        RangeExpression option;
-//        List<RangeExpression> validOptions = new ArrayList<>(Arrays.asList(RangeExpression.values()));
-//        option = Randomly.fromList(validOptions);
-//        switch (option) {
-//        case BINARY_OP:
-//            return new HazelcastBinaryRangeOperation(HazelcastBinaryRangeOperator.getRandom(),
-//                    generateExpression(depth + 1, HazelcastDataType.RANGE),
-//                    generateExpression(depth + 1, HazelcastDataType.RANGE));
-//        default:
-//            throw new AssertionError(option);
-//        }
-//    }
 
     private enum TextExpression {
         CAST,
@@ -372,14 +336,14 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
 
         switch (option) {
             case CAST:
-                return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(HazelcastDataType.TEXT));
+                return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(HazelcastDataType.VARCHAR));
             case FUNCTION:
-                return generateFunction(depth + 1, HazelcastDataType.TEXT);
+                return generateFunction(depth + 1, HazelcastDataType.VARCHAR);
             case CONCAT:
                 return generateConcat(depth);
             case COLLATE:
                 assert !expectedResult;
-                return new HazelcastCollate(generateExpression(depth + 1, HazelcastDataType.TEXT), globalState == null
+                return new HazelcastCollate(generateExpression(depth + 1, HazelcastDataType.VARCHAR), globalState == null
                         ? Randomly.fromOptions("C", "POSIX", "de_CH.utf8", "es_CR.utf8") : globalState.getRandomCollate());
             default:
                 throw new AssertionError();
@@ -387,16 +351,10 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     }
 
     private HazelcastExpression generateConcat(int depth) {
-        HazelcastExpression left = generateExpression(depth + 1, HazelcastDataType.TEXT);
+        HazelcastExpression left = generateExpression(depth + 1, HazelcastDataType.VARCHAR);
         HazelcastExpression right = generateExpression(depth + 1);
         return new HazelcastConcatOperation(left, right);
     }
-
-    private enum BitExpression {
-        BINARY_OPERATION
-    }
-
-    ;
 
     private enum IntExpression {
         UNARY_OPERATION, FUNCTION, CAST, BINARY_ARITHMETIC_EXPRESSION
@@ -407,16 +365,16 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
         option = Randomly.fromOptions(IntExpression.BINARY_ARITHMETIC_EXPRESSION, IntExpression.UNARY_OPERATION, IntExpression.FUNCTION);
         switch (option) {
             case CAST:
-                return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(HazelcastDataType.INT));
+                return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(HazelcastDataType.INTEGER));
             case UNARY_OPERATION:
-                HazelcastExpression intExpression = generateExpression(depth + 1, HazelcastDataType.INT);
+                HazelcastExpression intExpression = generateExpression(depth + 1, HazelcastDataType.INTEGER);
                 return new HazelcastPrefixOperation(intExpression,
                         Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS : PrefixOperator.UNARY_MINUS);
             case FUNCTION:
-                return generateFunction(depth + 1, HazelcastDataType.INT);
+                return generateFunction(depth + 1, HazelcastDataType.INTEGER);
             case BINARY_ARITHMETIC_EXPRESSION:
-                return new HazelcastBinaryArithmeticOperation(generateExpression(depth + 1, HazelcastDataType.INT),
-                        generateExpression(depth + 1, HazelcastDataType.INT), HazelcastBinaryOperator.getRandom());
+                return new HazelcastBinaryArithmeticOperation(generateExpression(depth + 1, HazelcastDataType.INTEGER),
+                        generateExpression(depth + 1, HazelcastDataType.INTEGER), HazelcastBinaryOperator.getRandom());
             default:
                 throw new AssertionError();
         }
@@ -452,23 +410,17 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
         if (Randomly.getBooleanWithSmallProbability()) {
             return HazelcastConstant.createNullConstant();
         }
-        // if (Randomly.getBooleanWithSmallProbability()) {
-        // return HazelcastConstant.createTextConstant(r.getString());
-        // }
         switch (type) {
-            case INT:
-                return HazelcastConstant.createIntConstant(r.getInteger());
+            case TINYINT:
+                return HazelcastConstant.createIntConstant((byte) r.getInteger(0, 255));
             case SMALLINT:
                 return HazelcastConstant.createIntConstant(r.getSmallInt());
+            case INTEGER:
+                return HazelcastConstant.createIntConstant(r.getInteger());
             case BOOLEAN:
-//                if (Randomly.getBooleanWithSmallProbability() && !HazelcastProvider.generateOnlyKnown) {
-//                    return HazelcastConstant
-//                            .createTextConstant(Randomly.fromOptions("TR", "TRUE", "FA", "FALSE", "0", "1", "ON", "off"));
-//                } else {
                 return HazelcastConstant.createBooleanConstant(Randomly.getBoolean());
-//                }
-            case TEXT:
-                return HazelcastConstant.createTextConstant(r.getString());
+            case VARCHAR:
+                return HazelcastConstant.createVarcharConstant(r.getString());
             case DECIMAL:
                 return HazelcastConstant.createDecimalConstant(r.getRandomBigDecimal());
             case FLOAT:
@@ -476,17 +428,6 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
             default:
                 throw new AssertionError(type);
         }
-    }
-
-    private static String getRandomInet(Randomly r) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 4; i++) {
-            if (i != 0) {
-                sb.append('.');
-            }
-            sb.append(r.getInteger() & 255);
-        }
-        return sb.toString();
     }
 
     public static HazelcastExpression generateExpression(HazelcastGlobalState globalState, List<HazelcastColumn> columns,

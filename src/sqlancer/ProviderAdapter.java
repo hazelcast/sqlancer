@@ -65,13 +65,13 @@ public abstract class ProviderAdapter<G extends GlobalState<O, ? extends Abstrac
     protected TestOracle getTestOracle(G globalState) throws Exception {
         List<? extends OracleFactory<G>> testOracleFactory = globalState.getDmbsSpecificOptions()
                 .getTestOracleFactory();
-        boolean testOracleRequiresMoreThanZeroRows = testOracleFactory.stream()
-                .anyMatch(p -> p.requiresAllTablesToContainRows());
-        boolean userRequiresMoreThanZeroRows = globalState.getOptions().testOnlyWithMoreThanZeroRows();
-        boolean checkZeroRows = testOracleRequiresMoreThanZeroRows || userRequiresMoreThanZeroRows;
-        if (checkZeroRows && globalState.getSchema().containsTableWithZeroRows(globalState)) {
-            throw new IgnoreMeException();
-        }
+//        boolean testOracleRequiresMoreThanZeroRows = testOracleFactory.stream()
+//                .anyMatch(OracleFactory::requiresAllTablesToContainRows);
+//        boolean userRequiresMoreThanZeroRows = globalState.getOptions().testOnlyWithMoreThanZeroRows();
+//        boolean checkZeroRows = testOracleRequiresMoreThanZeroRows || userRequiresMoreThanZeroRows;
+//        if (checkZeroRows && globalState.getSchema().containsTableWithZeroRows(globalState)) {
+//            throw new IgnoreMeException();
+//        }
         if (testOracleFactory.size() == 1) {
             return testOracleFactory.get(0).create(globalState);
         } else {

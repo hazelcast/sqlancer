@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
+
 public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, HazelcastSchema> {
 
     public static final char IMMUTABLE = 'i';
@@ -28,56 +30,31 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
     private List<String> opClasses = Collections.emptyList();
     // store and allow filtering by function volatility classifications
     private final Map<String, Character> functionsAndTypes = new HashMap<>();
-    private List<Character> allowedFunctionTypes = Arrays.asList(IMMUTABLE, STABLE, VOLATILE);
+    private List<Character> allowedFunctionTypes = asList(IMMUTABLE, STABLE, VOLATILE);
 
     @Override
     public void setConnection(SQLConnection con) {
         super.setConnection(con);
-        //TODO: Investigate & uncomment
-//        try {
-//            this.opClasses = getOpclasses(getConnection());
-//            this.operators = getOperators(getConnection());
-//            this.collates = getCollnames(getConnection());
-//        } catch (SQLException e) {
-//            throw new AssertionError(e);
-//        }
+        try {
+            this.opClasses = getOpclasses(getConnection());
+            this.operators = getOperators(getConnection());
+            this.collates = getCollnames(getConnection());
+        } catch (SQLException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private List<String> getCollnames(SQLConnection con) throws SQLException {
-        List<String> opClasses = new ArrayList<>();
-        try (Statement s = con.createStatement()) {
-            try (ResultSet rs = s
-                    .executeQuery("SELECT collname FROM pg_collation WHERE collname LIKE '%utf8' or collname = 'C';")) {
-                while (rs.next()) {
-                    opClasses.add(rs.getString(1));
-                }
-            }
-        }
+        List<String> opClasses = Collections.singletonList("en_US.utf8");
         return opClasses;
     }
 
     private List<String> getOpclasses(SQLConnection con) throws SQLException {
-        List<String> opClasses = new ArrayList<>();
-        try (Statement s = con.createStatement()) {
-            try (ResultSet rs = s.executeQuery("select opcname FROM pg_opclass;")) {
-                while (rs.next()) {
-                    opClasses.add(rs.getString(1));
-                }
-            }
-        }
-        return opClasses;
+        return Collections.emptyList();
     }
 
     private List<String> getOperators(SQLConnection con) throws SQLException {
-        List<String> opClasses = new ArrayList<>();
-        try (Statement s = con.createStatement()) {
-            try (ResultSet rs = s.executeQuery("SELECT oprname FROM pg_operator;")) {
-                while (rs.next()) {
-                    opClasses.add(rs.getString(1));
-                }
-            }
-        }
-        return opClasses;
+        return asList("=", "+", "-", "*", "/", "<", ">");
     }
 
     public List<String> getOperators() {
@@ -122,19 +99,19 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
     }
 
     public void setDefaultAllowedFunctionTypes() {
-        this.allowedFunctionTypes = Arrays.asList(IMMUTABLE, STABLE, VOLATILE);
+        this.allowedFunctionTypes = asList(IMMUTABLE, STABLE, VOLATILE);
     }
 
     public List<Character> getAllowedFunctionTypes() {
         return this.allowedFunctionTypes;
     }
 
-    public static SqlResult executeStatement(String query){
+    public static SqlResult executeStatement(String query) {
         System.out.println(query);
         return executeStatementSilently(query);
     }
 
-    public static SqlResult executeStatementSilently(String query){
+    public static SqlResult executeStatementSilently(String query) {
         return getHazelcast().getSql().execute(query);
     }
 

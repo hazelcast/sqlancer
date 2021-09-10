@@ -9,14 +9,14 @@ import java.util.List;
 
 public enum HazelcastFunctionWithUnknownResult {
 
-//    ABBREV("abbrev", HazelcastDataType.TEXT, HazelcastDataType.INET),
+//    ABBREV("abbrev", HazelcastDataType.VARCHAR, HazelcastDataType.INET),
 //    BROADCAST("broadcast", HazelcastDataType.INET, HazelcastDataType.INET),
-//    FAMILY("family", HazelcastDataType.INT, HazelcastDataType.INET),
+//    FAMILY("family", HazelcastDataType.INTEGER, HazelcastDataType.INET),
 //    HOSTMASK("hostmask", HazelcastDataType.INET, HazelcastDataType.INET),
-//    MASKLEN("masklen", HazelcastDataType.INT, HazelcastDataType.INET),
+//    MASKLEN("masklen", HazelcastDataType.INTEGER, HazelcastDataType.INET),
 //    NETMASK("netmask", HazelcastDataType.INET, HazelcastDataType.INET),
-//    SET_MASKLEN("set_masklen", HazelcastDataType.INET, HazelcastDataType.INET, HazelcastDataType.INT),
-//    TEXT("text", HazelcastDataType.TEXT, HazelcastDataType.INET),
+//    SET_MASKLEN("set_masklen", HazelcastDataType.INET, HazelcastDataType.INET, HazelcastDataType.INTEGER),
+//    TEXT("text", HazelcastDataType.VARCHAR, HazelcastDataType.INET),
 //    INET_SAME_FAMILY("inet_same_family", HazelcastDataType.BOOLEAN, HazelcastDataType.INET, HazelcastDataType.INET),
 
     // https://www.postgresql.org/docs/devel/functions-admin.html#FUNCTIONS-ADMIN-SIGNAL-TABLE
@@ -24,21 +24,21 @@ public enum HazelcastFunctionWithUnknownResult {
     // PG_ROTATE_LOGFILE("pg_rotate_logfile", PostgresDataType.BOOLEAN), prints warning
 
     // https://www.postgresql.org/docs/devel/functions-info.html#FUNCTIONS-INFO-SESSION-TABLE
-    CURRENT_DATABASE("current_database", HazelcastDataType.TEXT), // name
+    CURRENT_DATABASE("current_database", HazelcastDataType.VARCHAR), // name
     // CURRENT_QUERY("current_query", PostgresDataType.TEXT), // can generate false positives
-    CURRENT_SCHEMA("current_schema", HazelcastDataType.TEXT), // name
+    CURRENT_SCHEMA("current_schema", HazelcastDataType.VARCHAR), // name
     // CURRENT_SCHEMAS("current_schemas", PostgresDataType.TEXT, PostgresDataType.BOOLEAN),
-    INET_CLIENT_PORT("inet_client_port", HazelcastDataType.INT),
+    INET_CLIENT_PORT("inet_client_port", HazelcastDataType.INTEGER),
     // INET_SERVER_PORT("inet_server_port", PostgresDataType.INT),
-    PG_BACKEND_PID("pg_backend_pid", HazelcastDataType.INT),
-    PG_CURRENT_LOGFILE("pg_current_logfile", HazelcastDataType.TEXT),
+    PG_BACKEND_PID("pg_backend_pid", HazelcastDataType.INTEGER),
+    PG_CURRENT_LOGFILE("pg_current_logfile", HazelcastDataType.VARCHAR),
     PG_IS_OTHER_TEMP_SCHEMA("pg_is_other_temp_schema", HazelcastDataType.BOOLEAN),
     PG_JIT_AVAILABLE("pg_jit_available", HazelcastDataType.BOOLEAN),
 //    PG_NOTIFICATION_QUEUE_USAGE("pg_notification_queue_usage", HazelcastDataType.REAL),
-    PG_TRIGGER_DEPTH("pg_trigger_depth", HazelcastDataType.INT), VERSION("version", HazelcastDataType.TEXT),
+    PG_TRIGGER_DEPTH("pg_trigger_depth", HazelcastDataType.INTEGER), VERSION("version", HazelcastDataType.VARCHAR),
 
     //
-    TO_CHAR("to_char", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.TEXT) {
+    TO_CHAR("to_char", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR) {
         @Override
         public HazelcastExpression[] getArguments(HazelcastDataType returnType, HazelcastExpressionGenerator gen,
                                                  int depth) {
@@ -49,43 +49,43 @@ public enum HazelcastFunctionWithUnknownResult {
     },
 
     // String functions
-    ASCII("ascii", HazelcastDataType.INT, HazelcastDataType.TEXT),
-    BTRIM("btrim", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    CHR("chr", HazelcastDataType.TEXT, HazelcastDataType.INT),
-    CONVERT_FROM("convert_from", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.TEXT) {
+    ASCII("ascii", HazelcastDataType.INTEGER, HazelcastDataType.VARCHAR),
+    BTRIM("btrim", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    CHR("chr", HazelcastDataType.VARCHAR, HazelcastDataType.INTEGER),
+    CONVERT_FROM("convert_from", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR) {
         @Override
         public HazelcastExpression[] getArguments(HazelcastDataType returnType, HazelcastExpressionGenerator gen,
                                                  int depth) {
             HazelcastExpression[] args = super.getArguments(returnType, gen, depth);
-            args[1] = HazelcastConstant.createTextConstant(Randomly.fromOptions("UTF8", "LATIN1"));
+            args[1] = HazelcastConstant.createVarcharConstant(Randomly.fromOptions("UTF8", "LATIN1"));
             return args;
         }
     },
     // concat
     // segfault
     // BIT_LENGTH("bit_length", PostgresDataType.INT, PostgresDataType.TEXT),
-    INITCAP("initcap", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    LEFT("left", HazelcastDataType.TEXT, HazelcastDataType.INT, HazelcastDataType.TEXT),
-    LOWER("lower", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    MD5("md5", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    UPPER("upper", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
+    INITCAP("initcap", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    LEFT("left", HazelcastDataType.VARCHAR, HazelcastDataType.INTEGER, HazelcastDataType.VARCHAR),
+    LOWER("lower", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    MD5("md5", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    UPPER("upper", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
     // PG_CLIENT_ENCODING("pg_client_encoding", PostgresDataType.TEXT),
-    QUOTE_LITERAL("quote_literal", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    QUOTE_IDENT("quote_ident", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    REGEX_REPLACE("regex_replace", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.TEXT),
+    QUOTE_LITERAL("quote_literal", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    QUOTE_IDENT("quote_ident", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    REGEX_REPLACE("regex_replace", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
     // REPEAT("repeat", PostgresDataType.TEXT, PostgresDataType.TEXT,
     // PostgresDataType.INT),
-    REPLACE("replace", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    REVERSE("reverse", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    RIGHT("right", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.INT),
-    RPAD("rpad", HazelcastDataType.TEXT, HazelcastDataType.INT, HazelcastDataType.TEXT),
-    RTRIM("rtrim", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    SPLIT_PART("split_part", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.INT),
-    STRPOS("strpos", HazelcastDataType.INT, HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    SUBSTR("substr", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.INT, HazelcastDataType.INT),
-    TO_ASCII("to_ascii", HazelcastDataType.TEXT, HazelcastDataType.TEXT),
-    TO_HEX("to_hex", HazelcastDataType.INT, HazelcastDataType.TEXT),
-    TRANSLATE("translate", HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.TEXT, HazelcastDataType.TEXT),
+    REPLACE("replace", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    REVERSE("reverse", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    RIGHT("right", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.INTEGER),
+    RPAD("rpad", HazelcastDataType.VARCHAR, HazelcastDataType.INTEGER, HazelcastDataType.VARCHAR),
+    RTRIM("rtrim", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    SPLIT_PART("split_part", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.INTEGER),
+    STRPOS("strpos", HazelcastDataType.INTEGER, HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    SUBSTR("substr", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.INTEGER, HazelcastDataType.INTEGER),
+    TO_ASCII("to_ascii", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
+    TO_HEX("to_hex", HazelcastDataType.INTEGER, HazelcastDataType.VARCHAR),
+    TRANSLATE("translate", HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR, HazelcastDataType.VARCHAR),
     // mathematical functions
     // https://www.postgresql.org/docs/9.5/functions-math.html
 //    ABS("abs", HazelcastDataType.REAL, HazelcastDataType.REAL),
@@ -93,8 +93,8 @@ public enum HazelcastFunctionWithUnknownResult {
 //    DEGREES("degrees", HazelcastDataType.REAL), EXP("exp", HazelcastDataType.REAL), LN("ln", HazelcastDataType.REAL),
 //    LOG("log", HazelcastDataType.REAL), LOG2("log", HazelcastDataType.REAL, HazelcastDataType.REAL),
 //    PI("pi", HazelcastDataType.REAL), POWER("power", HazelcastDataType.REAL, HazelcastDataType.REAL),
-//    TRUNC("trunc", HazelcastDataType.REAL, HazelcastDataType.INT),
-//    TRUNC2("trunc", HazelcastDataType.REAL, HazelcastDataType.INT, HazelcastDataType.REAL),
+//    TRUNC("trunc", HazelcastDataType.REAL, HazelcastDataType.INTEGER),
+//    TRUNC2("trunc", HazelcastDataType.REAL, HazelcastDataType.INTEGER, HazelcastDataType.REAL),
 //    FLOOR("floor", HazelcastDataType.REAL),
 
     // trigonometric functions - complete
@@ -126,13 +126,13 @@ public enum HazelcastFunctionWithUnknownResult {
 //    ATANH("atanh", HazelcastDataType.REAL), //
 
     // https://www.postgresql.org/docs/devel/functions-binarystring.html
-    GET_BIT("get_bit", HazelcastDataType.INT, HazelcastDataType.TEXT, HazelcastDataType.INT),
-    GET_BYTE("get_byte", HazelcastDataType.INT, HazelcastDataType.TEXT, HazelcastDataType.INT),
+    GET_BIT("get_bit", HazelcastDataType.INTEGER, HazelcastDataType.VARCHAR, HazelcastDataType.INTEGER),
+    GET_BYTE("get_byte", HazelcastDataType.INTEGER, HazelcastDataType.VARCHAR, HazelcastDataType.INTEGER),
 
     // range functions
     // https://www.postgresql.org/docs/devel/functions-range.html#RANGE-FUNCTIONS-TABLE
-//    RANGE_LOWER("lower", HazelcastDataType.INT, HazelcastDataType.RANGE), //
-//    RANGE_UPPER("upper", HazelcastDataType.INT, HazelcastDataType.RANGE), //
+//    RANGE_LOWER("lower", HazelcastDataType.INTEGER, HazelcastDataType.RANGE), //
+//    RANGE_UPPER("upper", HazelcastDataType.INTEGER, HazelcastDataType.RANGE), //
 //    RANGE_ISEMPTY("isempty", HazelcastDataType.BOOLEAN, HazelcastDataType.RANGE), //
 //    RANGE_LOWER_INC("lower_inc", HazelcastDataType.BOOLEAN, HazelcastDataType.RANGE), //
 //    RANGE_UPPER_INC("upper_inc", HazelcastDataType.BOOLEAN, HazelcastDataType.RANGE), //
@@ -141,7 +141,7 @@ public enum HazelcastFunctionWithUnknownResult {
 //    RANGE_MERGE("range_merge", HazelcastDataType.RANGE, HazelcastDataType.RANGE, HazelcastDataType.RANGE), //
 
     // https://www.postgresql.org/docs/devel/functions-admin.html#FUNCTIONS-ADMIN-DBSIZE
-    GET_COLUMN_SIZE("get_column_size", HazelcastDataType.INT, HazelcastDataType.TEXT);
+    GET_COLUMN_SIZE("get_column_size", HazelcastDataType.INTEGER, HazelcastDataType.VARCHAR);
     // PG_DATABASE_SIZE("pg_database_size", PostgresDataType.INT, PostgresDataType.INT);
     // PG_SIZE_BYTES("pg_size_bytes", PostgresDataType.INT, PostgresDataType.TEXT);
 

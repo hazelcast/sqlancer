@@ -241,7 +241,7 @@ public class HazelcastTableGenerator {
             // otherwise: ERROR: both default and identity specified for column
             constraintSubset.remove(Randomly.fromOptions(ColumnConstraint.GENERATED, ColumnConstraint.DEFAULT));
         }
-        if (constraintSubset.contains(ColumnConstraint.GENERATED) && type != HazelcastDataType.INT) {
+        if (constraintSubset.contains(ColumnConstraint.GENERATED) && type != HazelcastDataType.INTEGER) {
             // otherwise: ERROR: identity column type must be smallint, integer, or bigint
             constraintSubset.remove(ColumnConstraint.GENERATED);
         }

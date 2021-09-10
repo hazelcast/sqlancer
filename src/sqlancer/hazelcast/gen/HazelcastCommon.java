@@ -64,7 +64,6 @@ public final class HazelcastCommon {
         errors.add("a negative number raised to a non-integer power yields a complex result");
         errors.add("could not determine polymorphic type because input has type unknown");
         addToCharFunctionErrors(errors);
-        addBitStringOperationErrors(errors);
         addFunctionErrors(errors);
         addCommonRangeExpressionErrors(errors);
         addCommonRegexExpressionErrors(errors);
@@ -82,13 +81,6 @@ public final class HazelcastCommon {
         errors.add("cannot use \"S\" and \"PL\" together");
         errors.add("cannot use \"PR\" and \"S\"/\"PL\"/\"MI\"/\"SG\" together");
         errors.add("is not a number");
-    }
-
-    private static void addBitStringOperationErrors(ExpectedErrors errors) {
-        errors.add("cannot XOR bit strings of different sizes");
-        errors.add("cannot AND bit strings of different sizes");
-        errors.add("cannot OR bit strings of different sizes");
-        errors.add("must be type boolean, not type text");
     }
 
     private static void addFunctionErrors(ExpectedErrors errors) {
@@ -125,274 +117,39 @@ public final class HazelcastCommon {
                                          boolean generateOnlyKnown, List<String> opClasses) throws AssertionError {
         boolean serial = false;
         switch (type) {
-        case BOOLEAN:
-            sb.append("boolean");
-            break;
-        case INT:
-            if (Randomly.getBoolean() && allowSerial) {
-                serial = true;
-                sb.append(Randomly.fromOptions("serial", "bigserial"));
-            } else {
-                sb.append(Randomly.fromOptions("smallint", "integer"));
-            }
-            break;
-        case TEXT:
-            // TODO: support CHAR (without VAR)
-            sb.append("VARCHAR");
-            //TODO: Support collations
+            case BOOLEAN:
+                sb.append("boolean");
+                break;
+            case INTEGER:
+                // TODO: support BIGINT
+                sb.append(Randomly.fromOptions("tinyint", "smallint", "integer", "bigint"));
+                break;
+            case VARCHAR:
+                // TODO: support CHAR (without VAR)
+                sb.append("VARCHAR");
+                //TODO: Support collations
 //            if (Randomly.getBoolean() && !HazelcastProvider.generateOnlyKnown) {
 //                sb.append(" COLLATE ");
 //                sb.append('"');
 //                sb.append(Randomly.fromList(opClasses));
 //                sb.append('"');
 //            }
-            break;
-        case DECIMAL:
-            sb.append("DECIMAL");
-            break;
-        case FLOAT:
-            sb.append("REAL");
-            break;
+                break;
+            case DECIMAL:
+                sb.append("DECIMAL");
+                break;
+            case FLOAT:
+                sb.append("REAL");
+                break;
 //        case REAL:
 //            sb.append("FLOAT");
 //            break;
-//        case RANGE:
-//            sb.append(Randomly.fromOptions("int4range", "int4range")); // , "int8range", "numrange"
-//            break;
-//        case BIT:
-//            sb.append("BIT");
-//            // if (Randomly.getBoolean()) {
-//            sb.append(" VARYING");
-//            // }
-//            sb.append("(");
-//            sb.append(Randomly.getNotCachedInteger(1, 500));
-//            sb.append(")");
-//            break;
-//        case INET:
-//            sb.append("inet");
-//            break;
-        default:
-            throw new AssertionError(type);
+            default:
+                throw new AssertionError(type);
         }
         return serial;
     }
 
-    public enum TableConstraints {
-        CHECK, UNIQUE, PRIMARY_KEY, FOREIGN_KEY, EXCLUDE
-    }
-
-    private enum StorageParameters {
-        FILLFACTOR("fillfactor", (r) -> r.getInteger(10, 100)),
-        // toast_tuple_target
-        PARALLEL_WORKERS("parallel_workers", (r) -> r.getInteger(0, 1024)),
-        AUTOVACUUM_ENABLED("autovacuum_enabled", (r) -> Randomly.fromOptions(0, 1)),
-        AUTOVACUUM_VACUUM_THRESHOLD("autovacuum_vacuum_threshold", (r) -> r.getInteger(0, 2147483647)),
-        OIDS("oids", (r) -> Randomly.fromOptions(0, 1)),
-        AUTOVACUUM_VACUUM_SCALE_FACTOR("autovacuum_vacuum_scale_factor",
-                (r) -> Randomly.fromOptions(0, 0.00001, 0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 1)),
-        AUTOVACUUM_ANALYZE_THRESHOLD("autovacuum_analyze_threshold", (r) -> r.getLong(0, Integer.MAX_VALUE)),
-        AUTOVACUUM_ANALYZE_SCALE_FACTOR("autovacuum_analyze_scale_factor",
-                (r) -> Randomly.fromOptions(0, 0.00001, 0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 1)),
-        AUTOVACUUM_VACUUM_COST_DELAY("autovacuum_vacuum_cost_delay", (r) -> r.getLong(0, 100)),
-        AUTOVACUUM_VACUUM_COST_LIMIT("autovacuum_vacuum_cost_limit", (r) -> r.getLong(1, 10000)),
-        AUTOVACUUM_FREEZE_MIN_AGE("autovacuum_freeze_min_age", (r) -> r.getLong(0, 1000000000)),
-        AUTOVACUUM_FREEZE_MAX_AGE("autovacuum_freeze_max_age", (r) -> r.getLong(100000, 2000000000)),
-        AUTOVACUUM_FREEZE_TABLE_AGE("autovacuum_freeze_table_age", (r) -> r.getLong(0, 2000000000));
-        // TODO
-
-        private String parameter;
-        private Function<Randomly, Object> op;
-
-        StorageParameters(String parameter, Function<Randomly, Object> op) {
-            this.parameter = parameter;
-            this.op = op;
-        }
-    }
-
-    public static void generateWith(StringBuilder sb, HazelcastGlobalState globalState, ExpectedErrors errors) {
-        if (Randomly.getBoolean()) {
-            sb.append(" WITH (");
-            ArrayList<StorageParameters> values = new ArrayList<>(Arrays.asList(StorageParameters.values()));
-            values.remove(StorageParameters.OIDS);
-            errors.add("unrecognized parameter");
-            errors.add("ALTER TABLE / ADD CONSTRAINT USING INDEX is not supported on partitioned tables");
-            List<StorageParameters> subset = Randomly.nonEmptySubset(values);
-            int i = 0;
-            for (StorageParameters parameter : subset) {
-                if (i++ != 0) {
-                    sb.append(", ");
-                }
-                sb.append(parameter.parameter);
-                sb.append("=");
-                sb.append(parameter.op.apply(globalState.getRandomly()));
-            }
-            sb.append(")");
-        }
-    }
-
-    public static void addTableConstraints(boolean excludePrimaryKey, StringBuilder sb, HazelcastTable table,
-                                           HazelcastGlobalState globalState, ExpectedErrors errors) {
-        // TODO constraint name
-        List<TableConstraints> tableConstraints = Randomly.nonEmptySubset(TableConstraints.values());
-        if (excludePrimaryKey) {
-            tableConstraints.remove(TableConstraints.PRIMARY_KEY);
-        }
-        if (globalState.getSchema().getDatabaseTables().isEmpty()) {
-            tableConstraints.remove(TableConstraints.FOREIGN_KEY);
-        }
-        for (TableConstraints t : tableConstraints) {
-            sb.append(", ");
-            // TODO add index parameters
-            addTableConstraint(sb, table, globalState, t, errors);
-        }
-    }
-
-    public static void addTableConstraint(StringBuilder sb, HazelcastTable table, HazelcastGlobalState globalState,
-                                          ExpectedErrors errors) {
-        addTableConstraint(sb, table, globalState, Randomly.fromOptions(TableConstraints.values()), errors);
-    }
-
-    private static void addTableConstraint(StringBuilder sb, HazelcastTable table, HazelcastGlobalState globalState,
-                                           TableConstraints t, ExpectedErrors errors) {
-        List<HazelcastColumn> randomNonEmptyColumnSubset = table.getRandomNonEmptyColumnSubset();
-        List<HazelcastColumn> otherColumns;
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        switch (t) {
-        case CHECK:
-            sb.append("CHECK(");
-            sb.append(HazelcastVisitor.getExpressionAsString(globalState, HazelcastDataType.BOOLEAN, table.getColumns()));
-            sb.append(")");
-            errors.add("constraint must be added to child tables too");
-            errors.add("missing FROM-clause entry for table");
-            break;
-        case UNIQUE:
-            sb.append("UNIQUE(");
-            sb.append(randomNonEmptyColumnSubset.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
-            sb.append(")");
-            appendIndexParameters(sb, globalState, errors);
-            break;
-        case PRIMARY_KEY:
-            sb.append("PRIMARY KEY(");
-            sb.append(randomNonEmptyColumnSubset.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
-            sb.append(")");
-            appendIndexParameters(sb, globalState, errors);
-            break;
-        case FOREIGN_KEY:
-            sb.append("FOREIGN KEY (");
-            sb.append(randomNonEmptyColumnSubset.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
-            sb.append(") REFERENCES ");
-            HazelcastTable randomOtherTable = globalState.getSchema().getRandomTable(tab -> !tab.isView());
-            sb.append(randomOtherTable.getName());
-            if (randomOtherTable.getColumns().size() < randomNonEmptyColumnSubset.size()) {
-                throw new IgnoreMeException();
-            }
-            otherColumns = randomOtherTable.getRandomNonEmptyColumnSubset(randomNonEmptyColumnSubset.size());
-            sb.append("(");
-            sb.append(otherColumns.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
-            sb.append(")");
-            if (Randomly.getBoolean()) {
-                sb.append(" ");
-                sb.append(Randomly.fromOptions("MATCH FULL", "MATCH SIMPLE"));
-            }
-            if (Randomly.getBoolean()) {
-                sb.append(" ON DELETE ");
-                errors.add("ERROR: invalid ON DELETE action for foreign key constraint containing generated column");
-                deleteOrUpdateAction(sb);
-            }
-            if (Randomly.getBoolean()) {
-                sb.append(" ON UPDATE ");
-                errors.add("invalid ON UPDATE action for foreign key constraint containing generated column");
-                deleteOrUpdateAction(sb);
-            }
-            if (Randomly.getBoolean()) {
-                sb.append(" ");
-                if (Randomly.getBoolean()) {
-                    sb.append("DEFERRABLE");
-                    if (Randomly.getBoolean()) {
-                        sb.append(" ");
-                        sb.append(Randomly.fromOptions("INITIALLY DEFERRED", "INITIALLY IMMEDIATE"));
-                    }
-                } else {
-                    sb.append("NOT DEFERRABLE");
-                }
-            }
-            break;
-        case EXCLUDE:
-            sb.append("EXCLUDE ");
-            sb.append("(");
-            // TODO [USING index_method ]
-            for (int i = 0; i < Randomly.smallNumber() + 1; i++) {
-                if (i != 0) {
-                    sb.append(", ");
-                }
-                appendExcludeElement(sb, globalState, table.getColumns());
-                sb.append(" WITH ");
-                appendOperator(sb, globalState.getOperators());
-            }
-            sb.append(")");
-            appendIndexParameters(sb, globalState, errors);
-            errors.add("is not valid");
-            errors.add("no operator matches");
-            errors.add("operator does not exist");
-            errors.add("unknown has no default operator class");
-            errors.add("exclusion constraints are not supported on partitioned tables");
-            errors.add("The exclusion operator must be related to the index operator class for the constraint");
-            errors.add("could not create exclusion constraint");
-            // TODO: index parameters
-            if (Randomly.getBoolean()) {
-                sb.append(" WHERE ");
-                sb.append("(");
-                sb.append(HazelcastVisitor.asString(HazelcastExpressionGenerator.generateExpression(globalState,
-                        table.getColumns(), HazelcastDataType.BOOLEAN)));
-                sb.append(")");
-            }
-            break;
-        default:
-            throw new AssertionError(t);
-        }
-    }
-
-    private static void appendIndexParameters(StringBuilder sb, HazelcastGlobalState globalState,
-            ExpectedErrors errors) {
-        if (Randomly.getBoolean()) {
-            generateWith(sb, globalState, errors);
-        }
-        // TODO: [ USING INDEX TABLESPACE tablespace ]
-    }
-
-    private static void appendOperator(StringBuilder sb, List<String> operators) {
-        sb.append(Randomly.fromList(operators));
-    }
-
-    // complete
-    private static void appendExcludeElement(StringBuilder sb, HazelcastGlobalState globalState,
-            List<HazelcastColumn> columns) {
-        if (Randomly.getBoolean()) {
-            // append column name
-            sb.append(Randomly.fromList(columns).getName());
-        } else {
-            // append expression
-            sb.append("(");
-            sb.append(HazelcastVisitor.asString(HazelcastExpressionGenerator.generateExpression(globalState, columns)));
-            sb.append(")");
-        }
-        if (Randomly.getBoolean()) {
-            sb.append(" ");
-            sb.append(Randomly.fromList(globalState.getOpClasses()));
-        }
-        if (Randomly.getBoolean()) {
-            sb.append(" ");
-            sb.append(Randomly.fromOptions("ASC", "DESC"));
-        }
-        if (Randomly.getBoolean()) {
-            sb.append(" NULLS ");
-            sb.append(Randomly.fromOptions("FIRST", "LAST"));
-        }
-    }
-
-    private static void deleteOrUpdateAction(StringBuilder sb) {
-        sb.append(Randomly.fromOptions("NO ACTION", "RESTRICT", "CASCADE", "SET NULL", "SET DEFAULT"));
-    }
 
     public static void addGroupingErrors(ExpectedErrors errors) {
         errors.add("non-integer constant in GROUP BY"); // TODO
