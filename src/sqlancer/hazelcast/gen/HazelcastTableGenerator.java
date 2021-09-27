@@ -22,7 +22,6 @@ public class HazelcastTableGenerator {
     private boolean columnCanHavePrimaryKey;
     private boolean columnHasPrimaryKey;
     private final StringBuilder sb = new StringBuilder();
-    private boolean isTemporaryTable;
     private final HazelcastSchema newSchema;
     private final List<HazelcastColumn> columnsToBeAdded = new ArrayList<>();
     protected final ExpectedErrors errors = new ExpectedErrors();
@@ -36,7 +35,7 @@ public class HazelcastTableGenerator {
         this.newSchema = newSchema;
         this.generateOnlyKnown = generateOnlyKnown;
         this.globalState = globalState;
-        table = new HazelcastTable(tableName, columnsToBeAdded, null, null, null, false, false);
+        table = new HazelcastTable(tableName, columnsToBeAdded, null, false);
         errors.add("invalid input syntax for");
         errors.add("is not unique");
         errors.add("integer out of range");
@@ -125,17 +124,9 @@ public class HazelcastTableGenerator {
 //            HazelcastCommon.addTableConstraints(columnHasPrimaryKey, sb, table, globalState, errors);
         }
         sb.append(")");
-        //TODO: Enable INHERITS
-//        generateInherits();
         //TODO: Enable PARTITION BY
 //        generatePartitionBy();
 //        HazelcastCommon.generateWith(sb, globalState, errors);
-        //TODO: Enable ON COMMIT
-//        if (Randomly.getBoolean() && isTemporaryTable) {
-//            sb.append(" ON COMMIT ");
-//            sb.append(Randomly.fromOptions("PRESERVE ROWS", "DELETE ROWS", "DROP"));
-//            sb.append(" ");
-//        }
     }
 
     private void createLike() {

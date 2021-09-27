@@ -5,6 +5,8 @@ import com.beust.jcommander.Parameters;
 
 import sqlancer.Randomly.StringGenerationStrategy;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 @Parameters(separators = "=", commandDescription = "Options applicable to all DBMS")
 public class MainOptions {
 
@@ -17,17 +19,17 @@ public class MainOptions {
 
     @Parameter(names = {
             "--random-seed" }, description = "A seed value != -1 that can be set to make the query and database generation deterministic")
-    private long randomSeed = -1; // NOPMD
+    private long randomSeed = ThreadLocalRandom.current().nextLong(); // NOPMD
 
     @Parameter(names = { "--num-tries" }, description = "Specifies after how many found errors to stop testing")
-    private int totalNumberTries = 100; // NOPMD
+    private int totalNumberTries = 10; // NOPMD
 
     @Parameter(names = { "--max-num-inserts" }, description = "Specifies how many INSERT statements should be issued")
-    private int maxNumberInserts = 30; // NOPMD
+    private int maxNumberInserts = 500; // NOPMD
 
     @Parameter(names = {
             "--max-expression-depth" }, description = "Specifies the maximum depth of randomly-generated expressions")
-    private int maxExpressionDepth = 3; // NOPMD
+    private int maxExpressionDepth = 2; // NOPMD
 
     @Parameter(names = {
             "--num-queries" }, description = "Specifies the number of queries to be issued to a database before creating a new database")

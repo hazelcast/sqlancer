@@ -36,14 +36,6 @@ public final class HazelcastCommentGenerator {
             sb.append("COLUMN ");
             sb.append(randomTable.getRandomColumn().getFullQualifiedName());
             break;
-        case STATISTICS:
-            sb.append("STATISTICS ");
-            if (randomTable.getStatistics().isEmpty()) {
-                throw new IgnoreMeException();
-            } else {
-                sb.append(randomTable.getStatistics().get(0).getName());
-            }
-            break;
         case TABLE:
             sb.append("TABLE ");
             if (randomTable.isView()) {

@@ -13,6 +13,8 @@ import sqlancer.hazelcast.HazelcastSchema.HazelcastTable;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sqlancer.hazelcast.gen.HazelcastExpressionGenerator.*;
+
 public final class HazelcastUpdateGenerator {
 
     private HazelcastUpdateGenerator() {
@@ -31,7 +33,7 @@ public final class HazelcastUpdateGenerator {
                 "You might need to add explicit type casts.", "invalid regular expression",
                 "View columns that are not columns of their base relation are not updatable");
         errors.add("multiple assignments to same column"); // view whose columns refer to a column in the referenced
-                                                           // table multiple times
+        // table multiple times
         errors.add("new row violates check option for view");
         final String keyColumn = "__key";   // __key column cannot be updated
         List<HazelcastColumn> columns = randomTable.getRandomNonEmptyColumnSubset().stream()
@@ -49,21 +51,8 @@ public final class HazelcastUpdateGenerator {
             HazelcastColumn column = columns.get(i);
             sb.append(column.getName());
             sb.append(" = ");
-//            if (!Randomly.getBoolean()) {
-                HazelcastExpression constant = HazelcastExpressionGenerator.generateConstant(globalState.getRandomly(),
-                        column.getType());
-                sb.append(HazelcastVisitor.asString(constant));
-//            } else if (Randomly.getBoolean()) {
-//                sb.append("DEFAULT");
-//            }
-//            } else {
-//                sb.append("(");
-//                HazelcastExpression expr = HazelcastExpressionGenerator.generateExpression(globalState,
-//                        randomTable.getColumns(), column.getType());
-//                // caused by casts
-//                sb.append(HazelcastVisitor.asString(expr));
-//                sb.append(")");
-//            }
+            HazelcastExpression constant = generateConstant(globalState.getRandomly(), column.getType());
+            sb.append(HazelcastVisitor.asString(constant));
         }
         errors.add("invalid input syntax for ");
         errors.add("operator does not exist: text = boolean");
@@ -73,7 +62,7 @@ public final class HazelcastUpdateGenerator {
         HazelcastCommon.addCommonExpressionErrors(errors);
         if (!Randomly.getBooleanWithSmallProbability()) {
             sb.append(" WHERE ");
-            HazelcastExpression where = HazelcastExpressionGenerator.generateExpression(globalState,
+            HazelcastExpression where = generateExpression(globalState,
                     randomTable.getColumns(), HazelcastDataType.BOOLEAN);
             sb.append(HazelcastVisitor.asString(where));
         }

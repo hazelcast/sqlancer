@@ -40,10 +40,9 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
     }
 
     public enum Action implements AbstractAction<HazelcastGlobalState> {
-        DELETE(HazelcastDeleteGenerator::create), //
         INSERT(HazelcastInsertGenerator::insert), //
+        DELETE(HazelcastDeleteGenerator::create), //
         UPDATE(HazelcastUpdateGenerator::create); //
-//        CREATE_SEQUENCE(HazelcastSequenceGenerator::createSequence), //
 
         private final SQLQueryProvider<HazelcastGlobalState> sqlQueryProvider;
 

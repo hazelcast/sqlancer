@@ -242,19 +242,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
         if (dataType == HazelcastDataType.FLOAT) {
             dataType = HazelcastDataType.INTEGER;
         }
-        if (!filterColumns(dataType).isEmpty() && Randomly.getBoolean()) {
-            return potentiallyWrapInCollate(dataType, createColumnOfType(dataType));
-        }
-        HazelcastExpression exprInternal = generateExpressionInternal(depth, dataType);
-        return potentiallyWrapInCollate(dataType, exprInternal);
-    }
-
-    private HazelcastExpression potentiallyWrapInCollate(HazelcastDataType dataType, HazelcastExpression exprInternal) {
-        if (dataType == HazelcastDataType.VARCHAR && HazelcastProvider.generateOnlyKnown) {
-            return new HazelcastCollate(exprInternal, "C");
-        } else {
-            return exprInternal;
-        }
+        return generateExpressionInternal(depth, dataType);
     }
 
     private HazelcastExpression generateExpressionInternal(int depth, HazelcastDataType dataType) throws AssertionError {
@@ -305,6 +293,8 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
             case BOOLEAN:
             case DECIMAL: // TODO
             case FLOAT:
+            case TINYINT:
+            case SMALLINT:
             case INTEGER:
             case VARCHAR: // TODO
                 return HazelcastCompoundDataType.create(type);
@@ -407,14 +397,11 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     }
 
     public static HazelcastExpression generateConstant(Randomly r, HazelcastDataType type) {
-        if (Randomly.getBooleanWithSmallProbability()) {
-            return HazelcastConstant.createNullConstant();
-        }
         switch (type) {
             case TINYINT:
                 return HazelcastConstant.createIntConstant((byte) r.getInteger(0, 255));
             case SMALLINT:
-                return HazelcastConstant.createIntConstant(r.getSmallInt());
+                return HazelcastConstant.createSmallIntConstant(r.getSmallInt());
             case INTEGER:
                 return HazelcastConstant.createIntConstant(r.getInteger());
             case BOOLEAN:

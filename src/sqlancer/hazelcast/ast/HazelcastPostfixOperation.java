@@ -23,17 +23,6 @@ public class HazelcastPostfixOperation implements HazelcastExpression {
             }
 
         },
-//        IS_UNKNOWN("IS UNKNOWN") {
-//            @Override
-//            public HazelcastConstant apply(HazelcastConstant expectedValue) {
-//                return HazelcastConstant.createBooleanConstant(expectedValue.isNull());
-//            }
-//
-//            @Override
-//            public HazelcastDataType[] getInputDataTypes() {
-//                return new HazelcastDataType[] { HazelcastDataType.BOOLEAN };
-//            }
-//        },
 
         IS_NOT_NULL("IS NOT NULL", "NOTNULL") {
 

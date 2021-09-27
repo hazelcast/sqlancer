@@ -61,7 +61,9 @@ public class HazelcastPivotedQuerySynthesisOracle
         List<HazelcastExpression> orderBy = new HazelcastExpressionGenerator(globalState).setColumns(columns)
                 .generateOrderBy();
         selectStatement.setOrderByExpressions(orderBy);
-        return new SQLQueryAdapter(HazelcastVisitor.asString(selectStatement));
+        String selectQuery = HazelcastVisitor.asString(selectStatement);
+        System.out.println("PQS >> " + selectQuery);
+        return new SQLQueryAdapter(selectQuery);
     }
 
     /*

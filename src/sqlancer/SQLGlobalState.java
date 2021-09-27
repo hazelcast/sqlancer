@@ -6,10 +6,8 @@ import sqlancer.common.schema.AbstractSchema;
 /**
  * Represents a global state that is valid for a testing session on a given database.
  *
- * @param <O>
- *            the option parameter
- * @param <S>
- *            the schema parameter
+ * @param <O> the option parameter
+ * @param <S> the schema parameter
  */
 public abstract class SQLGlobalState<O extends DBMSSpecificOptions<?>, S extends AbstractSchema<?, ?>>
         extends GlobalState<O, S, SQLConnection> {
@@ -17,9 +15,7 @@ public abstract class SQLGlobalState<O extends DBMSSpecificOptions<?>, S extends
     @Override
     protected void executeEpilogue(Query<?> q, boolean success, ExecutionTimer timer) throws Exception {
         boolean logExecutionTime = getOptions().logExecutionTime();
-        //TODO: Revert
-//        if (success && getOptions().printSucceedingStatements()) {
-        if (success) {
+        if (success && getOptions().printSucceedingStatements()) {
             System.out.println(q.getQueryString());
         }
         if (logExecutionTime) {
