@@ -102,10 +102,10 @@ public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<Hazelca
             select.setOrderByExpressions(gen.generateOrderBy());
         }
         if (Randomly.getBoolean()) {
-            select.setLimitClause(HazelcastConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
+            select.setLimitClause(HazelcastConstants.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             if (Randomly.getBoolean()) {
                 select.setOffsetClause(
-                        HazelcastConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
+                        HazelcastConstants.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             }
         }
         if (Randomly.getBooleanWithRatherLowProbability()) {

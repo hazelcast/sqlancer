@@ -33,11 +33,9 @@ public class HazelcastBinaryArithmeticOperation extends BinaryOperatorNode<Hazel
             }
         },
         DIVISION("/") {
-
             @Override
             public HazelcastConstant apply(HazelcastConstant left, HazelcastConstant right) {
                 return applyBitOperation(left, right, (l, r) -> r == 0 ? -1 : l / r);
-
             }
 
         },
@@ -48,24 +46,18 @@ public class HazelcastBinaryArithmeticOperation extends BinaryOperatorNode<Hazel
 
             }
         };
-//        EXPONENTIATION("^") {
-//            @Override
-//            public HazelcastConstant apply(HazelcastConstant left, HazelcastConstant right) {
-//                return null;
-//            }
-//        };
 
         private String textRepresentation;
 
         private static HazelcastConstant applyBitOperation(HazelcastConstant left, HazelcastConstant right,
                                                            BinaryOperator<Long> op) {
             if (left.isNull() || right.isNull()) {
-                return HazelcastConstant.createNullConstant();
+                return HazelcastConstants.createNullConstant();
             } else {
                 long leftVal = left.cast(HazelcastDataType.INTEGER).asInt();
                 long rightVal = right.cast(HazelcastDataType.INTEGER).asInt();
                 long value = op.apply(leftVal, rightVal);
-                return HazelcastConstant.createIntConstant(value);
+                return HazelcastConstants.createIntConstant(value);
             }
         }
 

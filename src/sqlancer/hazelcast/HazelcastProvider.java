@@ -62,7 +62,7 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
         switch (a) {
             case DELETE:
             case UPDATE:
-                nrPerformed = r.getInteger(0, 10);
+                nrPerformed = r.getInteger(0, globalState.getOptions().getMaxNumberUpdates());
                 break;
             case INSERT:
                 nrPerformed = r.getInteger(0, globalState.getOptions().getMaxNumberInserts());

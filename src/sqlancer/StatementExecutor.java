@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.Query;
 import sqlancer.hazelcast.HazelcastGlobalState;
 
@@ -74,12 +75,15 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
                         success = true;
                     } catch (HazelcastSqlException e) {
                         success = false;
-                        e.printStackTrace();
+                        ExpectedErrors expectedErrors = query.getExpectedErrors();
+                        Throwable rootCause = findRootCause(e);
+                        if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {
+                            e.printStackTrace();
+                        }
                     }
                 } while (nextAction.canBeRetried() && !success
                         && nrTries++ < globalState.getOptions().getNrStatementRetryCount());
             } catch (IgnoreMeException e) {
-
             }
             if (query != null && query.couldAffectSchema()) {
                 globalState.updateSchema();
@@ -87,5 +91,12 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
             }
             total--;
         }
+    }
+
+    private Throwable findRootCause(Throwable e) {
+        while (e.getCause() != null) {
+            e = e.getCause();
+        }
+        return e;
     }
 }

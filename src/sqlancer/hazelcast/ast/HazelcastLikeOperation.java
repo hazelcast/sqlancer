@@ -23,10 +23,10 @@ public class HazelcastLikeOperation extends BinaryNode<HazelcastExpression> impl
             return null;
         }
         if (leftVal.isNull() || rightVal.isNull()) {
-            return HazelcastConstant.createNullConstant();
+            return HazelcastConstants.createNullConstant();
         } else {
             boolean val = LikeImplementationHelper.match(leftVal.asString(), rightVal.asString(), 0, 0, true);
-            return HazelcastConstant.createBooleanConstant(val);
+            return HazelcastConstants.createBooleanConstant(val);
         }
     }
 

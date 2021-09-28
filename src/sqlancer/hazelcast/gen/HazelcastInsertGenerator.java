@@ -24,20 +24,9 @@ public final class HazelcastInsertGenerator {
     public static SQLQueryAdapter insert(HazelcastGlobalState globalState) {
         HazelcastTable table = globalState.getSchema().getRandomTable(HazelcastTable::isInsertable);
         ExpectedErrors errors = new ExpectedErrors();
-        errors.add("cannot insert into column");
         HazelcastCommon.addCommonExpressionErrors(errors);
         HazelcastCommon.addCommonInsertUpdateErrors(errors);
         HazelcastCommon.addCommonExpressionErrors(errors);
-        errors.add("multiple assignments to same column");
-        errors.add("violates foreign key constraint");
-        errors.add("value too long for type character varying");
-        errors.add("conflicting key value violates exclusion constraint");
-        errors.add("violates not-null constraint");
-        errors.add("current transaction is aborted");
-        errors.add("bit string too long");
-        errors.add("new row violates check option for view");
-        errors.add("reached maximum value of sequence");
-        errors.add("but expression is of type");
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO ");
         sb.append(table.getName());
@@ -78,14 +67,11 @@ public final class HazelcastInsertGenerator {
             }
         }
         errors.add("Duplicate key");
-        errors.add("identity column defined as GENERATED ALWAYS");
-        errors.add("out of range");
-        errors.add("violates check constraint");
-        errors.add("no partition of relation");
-        errors.add("invalid input syntax");
-        errors.add("division by zero");
-        errors.add("violates foreign key constraint");
-        errors.add("data type unknown");
+        errors.add("Division by zero");
+        errors.add("CAST function cannot convert value of type BOOLEAN to type INTEGER");
+        errors.add("Numeric overflow while converting");
+        errors.add("overflow if '*' operator");
+        errors.add("overflow if '+' operator");
         return new SQLQueryAdapter(sb.toString(), errors);
     }
 
@@ -114,7 +100,7 @@ public final class HazelcastInsertGenerator {
      */
     private static void addKeyColumnIfNotInTheList(List<HazelcastColumn> input) {
         if (input.stream().noneMatch(column -> column.getName().equals("__key"))) {
-            input.add(new HazelcastColumn("__key", HazelcastSchema.HazelcastDataType.INTEGER));
+            input.add(0, new HazelcastColumn("__key", HazelcastSchema.HazelcastDataType.INTEGER));
         }
     }
 

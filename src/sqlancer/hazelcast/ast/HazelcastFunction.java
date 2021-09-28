@@ -33,13 +33,12 @@ public class HazelcastFunction implements HazelcastExpression {
 
     public enum HazelcastFunctionWithResult {
         ABS(1, "abs") {
-
             @Override
             public HazelcastConstant apply(HazelcastConstant[] evaluatedArgs, HazelcastExpression... args) {
                 if (evaluatedArgs[0].isNull()) {
-                    return HazelcastConstant.createNullConstant();
+                    return HazelcastConstants.createNullConstant();
                 } else {
-                    return HazelcastConstant
+                    return HazelcastConstants
                             .createIntConstant(Math.abs(evaluatedArgs[0].cast(HazelcastDataType.INTEGER).asInt()));
                 }
             }
@@ -51,19 +50,18 @@ public class HazelcastFunction implements HazelcastExpression {
 
             @Override
             public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return new HazelcastDataType[] { returnType };
+                return new HazelcastDataType[]{returnType};
             }
 
         },
         LOWER(1, "lower") {
-
             @Override
             public HazelcastConstant apply(HazelcastConstant[] evaluatedArgs, HazelcastExpression... args) {
                 if (evaluatedArgs[0].isNull()) {
-                    return HazelcastConstant.createNullConstant();
+                    return HazelcastConstants.createNullConstant();
                 } else {
                     String text = evaluatedArgs[0].asString();
-                    return HazelcastConstant.createVarcharConstant(text.toLowerCase());
+                    return HazelcastConstants.createVarcharConstant(text.toLowerCase());
                 }
             }
 
@@ -74,7 +72,7 @@ public class HazelcastFunction implements HazelcastExpression {
 
             @Override
             public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return new HazelcastDataType[] { HazelcastDataType.VARCHAR };
+                return new HazelcastDataType[]{HazelcastDataType.VARCHAR};
             }
 
         },
@@ -82,10 +80,10 @@ public class HazelcastFunction implements HazelcastExpression {
             @Override
             public HazelcastConstant apply(HazelcastConstant[] evaluatedArgs, HazelcastExpression... args) {
                 if (evaluatedArgs[0].isNull()) {
-                    return HazelcastConstant.createNullConstant();
+                    return HazelcastConstants.createNullConstant();
                 }
                 String text = evaluatedArgs[0].asString();
-                return HazelcastConstant.createIntConstant(text.length());
+                return HazelcastConstants.createIntConstant(text.length());
             }
 
             @Override
@@ -95,18 +93,17 @@ public class HazelcastFunction implements HazelcastExpression {
 
             @Override
             public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return new HazelcastDataType[] { HazelcastDataType.VARCHAR};
+                return new HazelcastDataType[]{HazelcastDataType.VARCHAR};
             }
         },
         UPPER(1, "upper") {
-
             @Override
             public HazelcastConstant apply(HazelcastConstant[] evaluatedArgs, HazelcastExpression... args) {
                 if (evaluatedArgs[0].isNull()) {
-                    return HazelcastConstant.createNullConstant();
+                    return HazelcastConstants.createNullConstant();
                 } else {
                     String text = evaluatedArgs[0].asString();
-                    return HazelcastConstant.createVarcharConstant(text.toUpperCase());
+                    return HazelcastConstants.createVarcharConstant(text.toUpperCase());
                 }
             }
 
@@ -117,7 +114,7 @@ public class HazelcastFunction implements HazelcastExpression {
 
             @Override
             public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return new HazelcastDataType[] { HazelcastDataType.VARCHAR };
+                return new HazelcastDataType[]{HazelcastDataType.VARCHAR};
             }
 
         },
@@ -164,7 +161,7 @@ public class HazelcastFunction implements HazelcastExpression {
                         nr++;
                     }
                 }
-                return HazelcastConstant.createIntConstant(nr);
+                return HazelcastConstants.createIntConstant(nr);
             }
 
             @Override
@@ -192,7 +189,7 @@ public class HazelcastFunction implements HazelcastExpression {
                         nr++;
                     }
                 }
-                return HazelcastConstant.createIntConstant(nr);
+                return HazelcastConstants.createIntConstant(nr);
             }
 
             @Override

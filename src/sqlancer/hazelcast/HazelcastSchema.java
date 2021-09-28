@@ -7,6 +7,7 @@ import sqlancer.SQLConnection;
 import sqlancer.common.DBMSCommon;
 import sqlancer.common.schema.*;
 import sqlancer.hazelcast.ast.HazelcastConstant;
+import sqlancer.hazelcast.ast.HazelcastConstants;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,6 +15,7 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.*;
 
+import static java.util.stream.Collectors.toList;
 import static sqlancer.hazelcast.HazelcastGlobalState.executeStatementSilently;
 
 public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, HazelcastSchema.HazelcastTable> {
@@ -52,7 +54,6 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
         public static HazelcastColumn createDummy(String name) {
             return new HazelcastColumn(name, HazelcastDataType.INTEGER);
         }
-
     }
 
     public static class HazelcastTables extends AbstractTables<HazelcastTable, HazelcastColumn> {
@@ -62,33 +63,60 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
         }
 
         public HazelcastRowValue getRandomRowValue(SQLConnection con) {
-            String randomRow = String.format("SELECT %s FROM %s ORDER BY RAND() LIMIT 1",
-                    columnNamesAsString(c ->
-                            c.getTable().getName() + "." + c.getName() + " AS " + c.getTable().getName() + c.getName()),
-                    tableNamesAsString());
+            Set<String> nonEmptyMaps = new HashSet<>();
+
+            List<String> tableNames = getTables().stream().map(AbstractTable::getName).collect(toList());
+            try (Statement s = con.createStatement()) {
+                for (String table : tableNames) {
+                    String query = String.format("SELECT COUNT(*) FROM %s", table);
+
+                    ResultSet resultSet = s.executeQuery(query);
+                    if (resultSet.next()) {
+                        if (resultSet.getLong(1) > 0) {
+                            nonEmptyMaps.add(table);
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            final String tableName = Randomly.fromList(new ArrayList<>(nonEmptyMaps));
+            List<HazelcastColumn> tableColumns = getColumns()
+                    .stream()
+                    .filter(c -> c.getTable().getName().equals(tableName))
+                    .collect(toList());
+
+            String randomRow = String.format("SELECT * FROM %s ORDER BY RAND() LIMIT 1", tableName);
             Map<HazelcastColumn, HazelcastConstant> values = new HashMap<>();
             try (Statement s = con.createStatement()) {
                 ResultSet randomRowValues = s.executeQuery(randomRow);
                 if (!randomRowValues.next()) {
                     throw new AssertionError("could not find random row! " + randomRow + "\n");
                 }
-                for (int i = 0; i < getColumns().size(); i++) {
-                    HazelcastColumn column = getColumns().get(i);
-                    int columnIndex = randomRowValues.findColumn(column.getTable().getName() + column.getName());
+                for (int i = 0; i < tableColumns.size(); i++) {
+                    HazelcastColumn column = tableColumns.get(i);
+                    int columnIndex = randomRowValues.findColumn(column.getName());
                     assert columnIndex == i + 1;
                     HazelcastConstant constant;
                     if (randomRowValues.getString(columnIndex) == null) {
-                        constant = HazelcastConstant.createNullConstant();
+                        constant = HazelcastConstants.createNullConstant();
                     } else {
                         switch (column.getType()) {
                             case INTEGER:
-                                constant = HazelcastConstant.createIntConstant(randomRowValues.getLong(columnIndex));
+                                constant = HazelcastConstants.createIntConstant(randomRowValues.getInt(columnIndex));
+                                break;
+                            case FLOAT:
+                                constant = HazelcastConstants.createFloatConstant(randomRowValues.getFloat(columnIndex));
+                                break;
+                            case DOUBLE:
+                                constant = HazelcastConstants.createDoubleConstant(randomRowValues.getDouble(columnIndex));
                                 break;
                             case BOOLEAN:
-                                constant = HazelcastConstant.createBooleanConstant(randomRowValues.getBoolean(columnIndex));
+                                constant = HazelcastConstants.createBooleanConstant(randomRowValues.getBoolean(columnIndex));
                                 break;
                             case VARCHAR:
-                                constant = HazelcastConstant.createVarcharConstant(randomRowValues.getString(columnIndex));
+                                constant = HazelcastConstants.createVarcharConstant(randomRowValues.getString(columnIndex));
                                 break;
                             default:
                                 throw new IgnoreMeException();
@@ -106,7 +134,6 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
             }
 
         }
-
     }
 
     public static HazelcastDataType getColumnType(String typeString) {
@@ -116,14 +143,10 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
             case "smallint":
                 return HazelcastDataType.SMALLINT;
             case "integer":
-            case "bigint":
+            case "bigint": // TODO: support it as a separate type
                 return HazelcastDataType.INTEGER;
             case "boolean":
                 return HazelcastDataType.BOOLEAN;
-            case "text":
-            case "character":
-            case "character varying":
-            case "name":
             case "varchar":
                 return HazelcastDataType.VARCHAR;
             case "numeric":
@@ -145,46 +168,16 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
 
     public static class HazelcastTable
             extends AbstractRelationalTable<HazelcastColumn, HazelcastIndex, HazelcastGlobalState> {
-
-        public enum TableType {
-            STANDARD, TEMPORARY
-        }
-
-        private final TableType tableType;
-        private final List<HazelcastStatisticsObject> statistics;
         private final boolean isInsertable;
 
-        public HazelcastTable(String tableName, List<HazelcastColumn> columns, List<HazelcastIndex> indexes,
-                              TableType tableType, List<HazelcastStatisticsObject> statistics, boolean isView, boolean isInsertable) {
-            super(tableName, columns, indexes, isView);
-            this.statistics = statistics;
+        public HazelcastTable(String tableName, List<HazelcastColumn> columns,
+                              List<HazelcastIndex> indexes, boolean isInsertable) {
+            super(tableName, columns, indexes, false);
             this.isInsertable = isInsertable;
-            this.tableType = tableType;
-        }
-
-        public List<HazelcastStatisticsObject> getStatistics() {
-            return statistics;
-        }
-
-        public TableType getTableType() {
-            return tableType;
         }
 
         public boolean isInsertable() {
             return isInsertable;
-        }
-
-    }
-
-    public static final class HazelcastStatisticsObject {
-        private final String name;
-
-        public HazelcastStatisticsObject(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
         }
     }
 
@@ -217,18 +210,16 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
             while (sqlRowIterator.hasNext()) {
                 SqlRow sqlRow = sqlRowIterator.next();
                 String tableName = sqlRow.getObject("table_name");
-                String tableTypeSchema = sqlRow.getObject("table_schema");
 
-                boolean isView = tableName.startsWith("v");
-                HazelcastTable.TableType tableType = getTableType(tableTypeSchema);
                 List<HazelcastColumn> databaseColumns = getTableColumns(con, tableName);
-//                List<HazelcastIndex> indexes = getIndexes(con, tableName);
                 List<HazelcastIndex> indexes = new ArrayList<>();
-//                List<HazelcastStatisticsObject> statistics = getStatistics(con);
                 boolean isInsertable = databaseColumns.size() > 1;
-                List<HazelcastStatisticsObject> statistics = new ArrayList<>();
-                HazelcastTable t = new HazelcastTable(tableName, databaseColumns, indexes, tableType, statistics,
-                        isView, isInsertable);
+                HazelcastTable t = new HazelcastTable(
+                        tableName,
+                        databaseColumns,
+                        indexes,
+                        isInsertable
+                );
                 for (HazelcastColumn c : databaseColumns) {
                     c.setTable(t);
                 }
@@ -238,18 +229,6 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
         } catch (SQLIntegrityConstraintViolationException e) {
             throw new AssertionError(e);
         }
-    }
-
-    protected static HazelcastTable.TableType getTableType(String tableTypeStr) throws AssertionError {
-        HazelcastTable.TableType tableType;
-        if (tableTypeStr.contentEquals("public")) {
-            tableType = HazelcastTable.TableType.STANDARD;
-        } else if (tableTypeStr.startsWith("pg_temp")) {
-            tableType = HazelcastTable.TableType.TEMPORARY;
-        } else {
-            throw new AssertionError(tableTypeStr);
-        }
-        return tableType;
     }
 
     protected static List<HazelcastIndex> getIndexes(SQLConnection con, String tableName) throws SQLException {
@@ -271,7 +250,7 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     protected static List<HazelcastColumn> getTableColumns(SQLConnection con, String tableName) throws SQLException {
         List<HazelcastColumn> columns = new ArrayList<>();
         Iterator<SqlRow> iterator = executeStatementSilently(
-                "select column_name, data_type from information_schema.columns where table_name = '"
+                "SELECT column_name, data_type from information_schema.columns where table_name = '"
                         + tableName + "' ORDER BY column_name").iterator();
         while (iterator.hasNext()) {
             SqlRow sqlRow = iterator.next();
@@ -279,6 +258,9 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
             String dataType = sqlRow.getObject("data_type");
             HazelcastColumn c = new HazelcastColumn(columnName, getColumnType(dataType));
             columns.add(c);
+        }
+        if (columns.size() > 0 && columns.stream().noneMatch(c -> c.getName().equals("__key"))) {
+            columns.add(0, new HazelcastColumn("__key", HazelcastDataType.INTEGER));
         }
         return columns;
     }

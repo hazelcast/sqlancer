@@ -27,6 +27,9 @@ public class MainOptions {
     @Parameter(names = { "--max-num-inserts" }, description = "Specifies how many INSERT statements should be issued")
     private int maxNumberInserts = 500; // NOPMD
 
+    @Parameter(names = { "--max-num-updates" }, description = "Specifies how many UPDATE/DELETE statements should be issued")
+    private int maxNumberUpdates = 10; // NOPMD
+
     @Parameter(names = {
             "--max-expression-depth" }, description = "Specifies the maximum depth of randomly-generated expressions")
     private int maxExpressionDepth = 2; // NOPMD
@@ -139,6 +142,10 @@ public class MainOptions {
 
     public int getMaxNumberInserts() {
         return maxNumberInserts;
+    }
+
+    public int getMaxNumberUpdates() {
+        return maxNumberUpdates;
     }
 
     public int getNrStatementRetryCount() {

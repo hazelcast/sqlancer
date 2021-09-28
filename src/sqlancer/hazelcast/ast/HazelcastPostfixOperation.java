@@ -14,7 +14,7 @@ public class HazelcastPostfixOperation implements HazelcastExpression {
         IS_NULL("IS NULL", "ISNULL") {
             @Override
             public HazelcastConstant apply(HazelcastConstant expectedValue) {
-                return HazelcastConstant.createBooleanConstant(expectedValue.isNull());
+                return HazelcastConstants.createBooleanConstant(expectedValue.isNull());
             }
 
             @Override
@@ -25,10 +25,9 @@ public class HazelcastPostfixOperation implements HazelcastExpression {
         },
 
         IS_NOT_NULL("IS NOT NULL", "NOTNULL") {
-
             @Override
             public HazelcastConstant apply(HazelcastConstant expectedValue) {
-                return HazelcastConstant.createBooleanConstant(!expectedValue.isNull());
+                return HazelcastConstants.createBooleanConstant(!expectedValue.isNull());
             }
 
             @Override
@@ -40,47 +39,45 @@ public class HazelcastPostfixOperation implements HazelcastExpression {
         IS_NOT_UNKNOWN("IS NOT UNKNOWN") {
             @Override
             public HazelcastConstant apply(HazelcastConstant expectedValue) {
-                return HazelcastConstant.createBooleanConstant(!expectedValue.isNull());
+                return HazelcastConstants.createBooleanConstant(!expectedValue.isNull());
             }
 
             @Override
             public HazelcastDataType[] getInputDataTypes() {
-                return new HazelcastDataType[] { HazelcastDataType.BOOLEAN };
+                return new HazelcastDataType[]{HazelcastDataType.BOOLEAN};
             }
         },
         IS_TRUE("IS TRUE") {
-
             @Override
             public HazelcastConstant apply(HazelcastConstant expectedValue) {
                 if (expectedValue.isNull()) {
-                    return HazelcastConstant.createFalse();
+                    return HazelcastConstants.createFalse();
                 } else {
-                    return HazelcastConstant
+                    return HazelcastConstants
                             .createBooleanConstant(expectedValue.cast(HazelcastDataType.BOOLEAN).asBoolean());
                 }
             }
 
             @Override
             public HazelcastDataType[] getInputDataTypes() {
-                return new HazelcastDataType[] { HazelcastDataType.BOOLEAN };
+                return new HazelcastDataType[]{HazelcastDataType.BOOLEAN};
             }
 
         },
         IS_FALSE("IS FALSE") {
-
             @Override
             public HazelcastConstant apply(HazelcastConstant expectedValue) {
                 if (expectedValue.isNull()) {
-                    return HazelcastConstant.createFalse();
+                    return HazelcastConstants.createFalse();
                 } else {
-                    return HazelcastConstant
+                    return HazelcastConstants
                             .createBooleanConstant(!expectedValue.cast(HazelcastDataType.BOOLEAN).asBoolean());
                 }
             }
 
             @Override
             public HazelcastDataType[] getInputDataTypes() {
-                return new HazelcastDataType[] { HazelcastDataType.BOOLEAN };
+                return new HazelcastDataType[]{HazelcastDataType.BOOLEAN};
             }
 
         };

@@ -57,7 +57,7 @@ public enum HazelcastFunctionWithUnknownResult {
         public HazelcastExpression[] getArguments(HazelcastDataType returnType, HazelcastExpressionGenerator gen,
                                                  int depth) {
             HazelcastExpression[] args = super.getArguments(returnType, gen, depth);
-            args[1] = HazelcastConstant.createVarcharConstant(Randomly.fromOptions("UTF8", "LATIN1"));
+            args[1] = HazelcastConstants.createVarcharConstant(Randomly.fromOptions("UTF8", "LATIN1"));
             return args;
         }
     },

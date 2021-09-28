@@ -87,7 +87,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     private HazelcastConstant generateLimit() {
         if (Randomly.getBoolean()) {
-            return HazelcastConstant.createIntConstant(Integer.MAX_VALUE);
+            return HazelcastConstants.createIntConstant(Integer.MAX_VALUE);
         } else {
             return null;
         }
@@ -95,7 +95,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     private HazelcastExpression generateOffset() {
         if (Randomly.getBoolean()) {
-            return HazelcastConstant.createIntConstant(0);
+            return HazelcastConstants.createIntConstant(0);
         } else {
             return null;
         }

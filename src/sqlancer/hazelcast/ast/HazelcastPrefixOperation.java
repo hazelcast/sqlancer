@@ -17,9 +17,9 @@ public class HazelcastPrefixOperation implements HazelcastExpression {
             @Override
             protected HazelcastConstant getExpectedValue(HazelcastConstant expectedValue) {
                 if (expectedValue.isNull()) {
-                    return HazelcastConstant.createNullConstant();
+                    return HazelcastConstants.createNullConstant();
                 } else {
-                    return HazelcastConstant
+                    return HazelcastConstants
                             .createBooleanConstant(!expectedValue.cast(HazelcastDataType.BOOLEAN).asBoolean());
                 }
             }
@@ -55,7 +55,7 @@ public class HazelcastPrefixOperation implements HazelcastExpression {
                     throw new IgnoreMeException();
                 }
                 try {
-                    return HazelcastConstant.createIntConstant(-expectedValue.asInt());
+                    return HazelcastConstants.createIntConstant(-expectedValue.asInt());
                 } catch (UnsupportedOperationException e) {
                     return null;
                 }

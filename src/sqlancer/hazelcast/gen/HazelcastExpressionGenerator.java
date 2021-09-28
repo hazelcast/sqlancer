@@ -9,32 +9,14 @@ import sqlancer.hazelcast.HazelcastProvider;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastColumn;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastDataType;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastRowValue;
-import sqlancer.hazelcast.ast.HazelcastAggregate;
+import sqlancer.hazelcast.ast.*;
 import sqlancer.hazelcast.ast.HazelcastAggregate.HazelcastAggregateFunction;
-import sqlancer.hazelcast.ast.HazelcastBetweenOperation;
-import sqlancer.hazelcast.ast.HazelcastBinaryArithmeticOperation;
 import sqlancer.hazelcast.ast.HazelcastBinaryArithmeticOperation.HazelcastBinaryOperator;
-import sqlancer.hazelcast.ast.HazelcastBinaryComparisonOperation;
-import sqlancer.hazelcast.ast.HazelcastBinaryLogicalOperation;
 import sqlancer.hazelcast.ast.HazelcastBinaryLogicalOperation.BinaryLogicalOperator;
-import sqlancer.hazelcast.ast.HazelcastCastOperation;
-import sqlancer.hazelcast.ast.HazelcastCollate;
-import sqlancer.hazelcast.ast.HazelcastColumnValue;
-import sqlancer.hazelcast.ast.HazelcastConcatOperation;
-import sqlancer.hazelcast.ast.HazelcastConstant;
-import sqlancer.hazelcast.ast.HazelcastExpression;
-import sqlancer.hazelcast.ast.HazelcastFunction;
 import sqlancer.hazelcast.ast.HazelcastFunction.HazelcastFunctionWithResult;
-import sqlancer.hazelcast.ast.HazelcastFunctionWithUnknownResult;
-import sqlancer.hazelcast.ast.HazelcastInOperation;
-import sqlancer.hazelcast.ast.HazelcastLikeOperation;
-import sqlancer.hazelcast.ast.HazelcastOrderByTerm;
 import sqlancer.hazelcast.ast.HazelcastOrderByTerm.HazelcastOrder;
-import sqlancer.hazelcast.ast.HazelcastPOSIXRegularExpression;
 import sqlancer.hazelcast.ast.HazelcastPOSIXRegularExpression.POSIXRegex;
-import sqlancer.hazelcast.ast.HazelcastPostfixOperation;
 import sqlancer.hazelcast.ast.HazelcastPostfixOperation.PostfixOperator;
-import sqlancer.hazelcast.ast.HazelcastPrefixOperation;
 import sqlancer.hazelcast.ast.HazelcastPrefixOperation.PrefixOperator;
 
 import java.util.ArrayList;
@@ -263,7 +245,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
                     }
                 }
             } else {
-                if (Randomly.getBoolean()) {
+                if (Randomly.getBooleanWithRatherLowProbability()) {
                     return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(dataType));
                 } else {
                     return generateFunctionWithUnknownResult(depth, dataType);
@@ -276,12 +258,12 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
                 case TINYINT:
                 case SMALLINT:
                 case INTEGER:
-                    return generateIntExpression(depth);
+                    return generateIntExpression(dataType, depth);
                 case VARCHAR:
                     return generateTextExpression(depth);
                 case DECIMAL:
                 case FLOAT:
-                    return generateIntExpression(depth);
+                    return generateDecimalExpression(dataType, depth);
                 default:
                     throw new AssertionError(dataType);
             }
@@ -346,29 +328,59 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
         return new HazelcastConcatOperation(left, right);
     }
 
-    private enum IntExpression {
+    private enum DigitalExpression {
         UNARY_OPERATION, FUNCTION, CAST, BINARY_ARITHMETIC_EXPRESSION
     }
 
-    private HazelcastExpression generateIntExpression(int depth) {
-        IntExpression option;
-        option = Randomly.fromOptions(IntExpression.BINARY_ARITHMETIC_EXPRESSION, IntExpression.UNARY_OPERATION, IntExpression.FUNCTION);
+    private HazelcastExpression generateIntExpression(HazelcastDataType integerType, int depth) {
+        assert integerType == HazelcastDataType.INTEGER
+                || integerType == HazelcastDataType.SMALLINT
+                || integerType == HazelcastDataType.TINYINT;
+
+        DigitalExpression option;
+        option = Randomly.fromOptions(DigitalExpression.BINARY_ARITHMETIC_EXPRESSION,
+                DigitalExpression.UNARY_OPERATION,
+                DigitalExpression.FUNCTION);
+
         switch (option) {
             case CAST:
-                return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(HazelcastDataType.INTEGER));
+                return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(integerType));
             case UNARY_OPERATION:
-                HazelcastExpression intExpression = generateExpression(depth + 1, HazelcastDataType.INTEGER);
+                HazelcastExpression intExpression = generateExpression(depth + 1, integerType);
                 return new HazelcastPrefixOperation(intExpression,
                         Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS : PrefixOperator.UNARY_MINUS);
             case FUNCTION:
-                return generateFunction(depth + 1, HazelcastDataType.INTEGER);
+                return generateFunction(depth + 1, integerType);
             case BINARY_ARITHMETIC_EXPRESSION:
-                return new HazelcastBinaryArithmeticOperation(generateExpression(depth + 1, HazelcastDataType.INTEGER),
-                        generateExpression(depth + 1, HazelcastDataType.INTEGER), HazelcastBinaryOperator.getRandom());
+                return new HazelcastBinaryArithmeticOperation(generateExpression(depth + 1, integerType),
+                        generateExpression(depth + 1, integerType), HazelcastBinaryOperator.getRandom());
             default:
                 throw new AssertionError();
         }
     }
+
+    private HazelcastExpression generateDecimalExpression(HazelcastDataType decimalType, int depth) {
+        assert decimalType == HazelcastDataType.FLOAT || decimalType == HazelcastDataType.DECIMAL;
+
+        DigitalExpression option;
+        option = Randomly.fromOptions(DigitalExpression.BINARY_ARITHMETIC_EXPRESSION, DigitalExpression.UNARY_OPERATION, DigitalExpression.FUNCTION);
+        switch (option) {
+            case CAST:
+                return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(decimalType));
+            case UNARY_OPERATION:
+                HazelcastExpression decExpression = generateExpression(depth + 1, decimalType);
+                return new HazelcastPrefixOperation(decExpression,
+                        Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS : PrefixOperator.UNARY_MINUS);
+            case FUNCTION:
+                return generateFunction(depth + 1, decimalType);
+            case BINARY_ARITHMETIC_EXPRESSION:
+                return new HazelcastBinaryArithmeticOperation(generateExpression(depth + 1, decimalType),
+                        generateExpression(depth + 1, decimalType), HazelcastBinaryOperator.getRandom());
+            default:
+                throw new AssertionError();
+        }
+    }
+
 
     private HazelcastExpression createColumnOfType(HazelcastDataType type) {
         List<HazelcastColumn> columns = filterColumns(type);
@@ -399,19 +411,19 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     public static HazelcastExpression generateConstant(Randomly r, HazelcastDataType type) {
         switch (type) {
             case TINYINT:
-                return HazelcastConstant.createIntConstant((byte) r.getInteger(0, 255));
+                return HazelcastConstants.createIntConstant((byte) r.getInteger(0, 255));
             case SMALLINT:
-                return HazelcastConstant.createSmallIntConstant(r.getSmallInt());
+                return HazelcastConstants.createSmallIntConstant(r.getSmallInt());
             case INTEGER:
-                return HazelcastConstant.createIntConstant(r.getInteger());
+                return HazelcastConstants.createIntConstant(r.getInteger());
             case BOOLEAN:
-                return HazelcastConstant.createBooleanConstant(Randomly.getBoolean());
+                return HazelcastConstants.createBooleanConstant(Randomly.getBoolean());
             case VARCHAR:
-                return HazelcastConstant.createVarcharConstant(r.getString());
+                return HazelcastConstants.createVarcharConstant(r.getString());
             case DECIMAL:
-                return HazelcastConstant.createDecimalConstant(r.getRandomBigDecimal());
+                return HazelcastConstants.createDecimalConstant(r.getRandomBigDecimal());
             case FLOAT:
-                return HazelcastConstant.createFloatConstant((float) r.getDouble());
+                return HazelcastConstants.createFloatConstant((float) r.getDouble());
             default:
                 throw new AssertionError(type);
         }

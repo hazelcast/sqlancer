@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import sqlancer.GlobalState;
+import sqlancer.IgnoreMeException;
 import sqlancer.Main;
 import sqlancer.SQLConnection;
 
@@ -48,6 +49,9 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
     private void checkQueryString() {
         if (query.contains("CREATE TABLE") && !couldAffectSchema) {
             throw new AssertionError("CREATE TABLE statements should set couldAffectSchema to true");
+        }
+        if (query.equals(";")) {
+            throw new IgnoreMeException();
         }
     }
 

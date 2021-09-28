@@ -22,11 +22,11 @@ public class HazelcastConcatOperation extends BinaryNode<HazelcastExpression> im
             return null;
         }
         if (leftExpectedValue.isNull() || rightExpectedValue.isNull()) {
-            return HazelcastConstant.createNullConstant();
+            return HazelcastConstants.createNullConstant();
         }
         String leftStr = leftExpectedValue.cast(HazelcastDataType.VARCHAR).getUnquotedTextRepresentation();
         String rightStr = rightExpectedValue.cast(HazelcastDataType.VARCHAR).getUnquotedTextRepresentation();
-        return HazelcastConstant.createVarcharConstant(leftStr + rightStr);
+        return HazelcastConstants.createVarcharConstant(leftStr + rightStr);
     }
 
     @Override
