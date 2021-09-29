@@ -11,7 +11,7 @@ public class HazelcastPostfixOperation implements HazelcastExpression {
     private final String operatorTextRepresentation;
 
     public enum PostfixOperator implements Operator {
-        IS_NULL("IS NULL", "ISNULL") {
+        IS_NULL("IS NULL") {
             @Override
             public HazelcastConstant apply(HazelcastConstant expectedValue) {
                 return HazelcastConstants.createBooleanConstant(expectedValue.isNull());
@@ -24,7 +24,7 @@ public class HazelcastPostfixOperation implements HazelcastExpression {
 
         },
 
-        IS_NOT_NULL("IS NOT NULL", "NOTNULL") {
+        IS_NOT_NULL("IS NOT NULL") {
             @Override
             public HazelcastConstant apply(HazelcastConstant expectedValue) {
                 return HazelcastConstants.createBooleanConstant(!expectedValue.isNull());

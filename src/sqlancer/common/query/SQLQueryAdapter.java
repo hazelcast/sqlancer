@@ -94,6 +94,7 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
             return true;
         } catch (Exception e) {
             Main.nrUnsuccessfulActions.addAndGet(1);
+            System.out.println("Problems in query : " + query);
             checkException(e);
             return false;
         }
@@ -101,6 +102,7 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
 
     public void checkException(Exception e) throws AssertionError {
         if (!expectedErrors.errorIsExpected(e.getMessage())) {
+            e.printStackTrace();
             throw new AssertionError(query, e);
         }
     }
@@ -131,6 +133,7 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
             }
             return new SQLancerResultSet(result);
         } catch (Exception e) {
+            System.out.println("Problems in query : " + query);
             s.close();
             Main.nrUnsuccessfulActions.addAndGet(1);
             checkException(e);

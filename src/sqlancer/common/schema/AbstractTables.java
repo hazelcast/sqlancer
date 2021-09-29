@@ -3,6 +3,7 @@ package sqlancer.common.schema;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class AbstractTables<T extends AbstractTable<C, ?, ?>, C extends AbstractTableColumn<?, ?>> {
@@ -32,6 +33,13 @@ public class AbstractTables<T extends AbstractTable<C, ?, ?>, C extends Abstract
 
     public String columnNamesAsString(Function<C, String> function) {
         return getColumns().stream().map(function).collect(Collectors.joining(", "));
+    }
+
+    public String columnNamesAsString(Function<C, String> function, String tableName) {
+        return getColumns().stream()
+                .filter(c -> c.getTable().getName().equals(tableName))
+                .map(function)
+                .collect(Collectors.joining(", "));
     }
 
 }

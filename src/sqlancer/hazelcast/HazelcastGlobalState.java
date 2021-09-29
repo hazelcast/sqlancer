@@ -107,7 +107,6 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
     }
 
     public static SqlResult executeStatement(String query) {
-        System.out.println(query);
         return executeStatementSilently(query);
     }
 

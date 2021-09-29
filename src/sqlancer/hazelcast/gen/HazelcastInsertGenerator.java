@@ -68,10 +68,14 @@ public final class HazelcastInsertGenerator {
         }
         errors.add("Duplicate key");
         errors.add("Division by zero");
+        errors.add("/ by zero");
         errors.add("CAST function cannot convert value of type BOOLEAN to type INTEGER");
         errors.add("Numeric overflow while converting");
-        errors.add("overflow if '*' operator");
-        errors.add("overflow if '+' operator");
+        errors.add("Cannot parse VARCHAR to");
+        errors.add("Cannot parse VARCHAR value to");
+        errors.add("overflow in '*' operator");
+        errors.add("overflow in '+' operator");
+        errors.add("overflow in '+' operator");
         return new SQLQueryAdapter(sb.toString(), errors);
     }
 

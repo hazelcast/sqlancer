@@ -86,8 +86,13 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                     .stream()
                     .filter(c -> c.getTable().getName().equals(tableName))
                     .collect(toList());
+            final HazelcastTable usedTable = tableColumns.get(0).getTable();
 
-            String randomRow = String.format("SELECT * FROM %s ORDER BY RAND() LIMIT 1", tableName);
+            String randomRow = String.format("SELECT %s FROM %s ORDER BY RAND() LIMIT 1", columnNamesAsString(
+                            c -> c.getTable().getName() + "." + c.getName() + " AS " + c.getTable().getName() + c.getName(),
+                            tableName),
+                    tableName);
+
             Map<HazelcastColumn, HazelcastConstant> values = new HashMap<>();
             try (Statement s = con.createStatement()) {
                 ResultSet randomRowValues = s.executeQuery(randomRow);
@@ -96,7 +101,8 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                 }
                 for (int i = 0; i < tableColumns.size(); i++) {
                     HazelcastColumn column = tableColumns.get(i);
-                    int columnIndex = randomRowValues.findColumn(column.getName());
+                    String columnName = column.getTable().getName() + column.getName();
+                    int columnIndex = randomRowValues.findColumn(columnName) + 1;
                     assert columnIndex == i + 1;
                     HazelcastConstant constant;
                     if (randomRowValues.getString(columnIndex) == null) {
@@ -125,7 +131,7 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                     values.put(column, constant);
                 }
                 if (randomRowValues.next()) throw new AssertionError();
-                return new HazelcastRowValue(this, values);
+                return new HazelcastRowValue(this, usedTable, values);
             } catch (SQLException e) {
                 System.err.println("===================================");
                 e.printStackTrace();
@@ -159,11 +165,16 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     }
 
     public static class HazelcastRowValue extends AbstractRowValue<HazelcastTables, HazelcastColumn, HazelcastConstant> {
+        private HazelcastTable usedTable;
 
-        protected HazelcastRowValue(HazelcastTables tables, Map<HazelcastColumn, HazelcastConstant> values) {
+        protected HazelcastRowValue(HazelcastTables tables, HazelcastTable usedTable, Map<HazelcastColumn, HazelcastConstant> values) {
             super(tables, values);
+            this.usedTable = usedTable;
         }
 
+        public HazelcastTable getUsedTable() {
+            return usedTable;
+        }
     }
 
     public static class HazelcastTable
@@ -229,22 +240,6 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
         } catch (SQLIntegrityConstraintViolationException e) {
             throw new AssertionError(e);
         }
-    }
-
-    protected static List<HazelcastIndex> getIndexes(SQLConnection con, String tableName) throws SQLException {
-        List<HazelcastIndex> indexes = new ArrayList<>();
-        try (Statement s = con.createStatement()) {
-            try (ResultSet rs = s.executeQuery(String
-                    .format("SELECT indexname FROM pg_indexes WHERE tablename='%s' ORDER BY indexname;", tableName))) {
-                while (rs.next()) {
-                    String indexName = rs.getString("indexname");
-                    if (DBMSCommon.matchesIndexName(indexName)) {
-                        indexes.add(HazelcastIndex.create(indexName));
-                    }
-                }
-            }
-        }
-        return indexes;
     }
 
     protected static List<HazelcastColumn> getTableColumns(SQLConnection con, String tableName) throws SQLException {

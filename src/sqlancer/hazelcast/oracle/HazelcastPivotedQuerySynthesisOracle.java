@@ -6,6 +6,7 @@ import sqlancer.common.oracle.PivotedQuerySynthesisBase;
 import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.hazelcast.HazelcastGlobalState;
+import sqlancer.hazelcast.HazelcastSchema;
 import sqlancer.hazelcast.HazelcastVisitor;
 import sqlancer.hazelcast.ast.*;
 import sqlancer.hazelcast.gen.HazelcastCommon;
@@ -41,10 +42,10 @@ public class HazelcastPivotedQuerySynthesisOracle
         selectStatement.setSelectType(Randomly.fromOptions(HazelcastSelect.SelectType.values()));
         List<HazelcastColumn> columns = randomFromTables.getColumns();
         pivotRow = randomFromTables.getRandomRowValue(globalState.getConnection());
+        HazelcastSchema.HazelcastTable usedTable = pivotRow.getUsedTable();
 
-        fetchColumns = columns;
-        selectStatement.setFromList(randomFromTables.getTables().stream().map(t -> new HazelcastFromTable(t, false))
-                .collect(Collectors.toList()));
+        fetchColumns = columns.stream().filter(c -> c.getTable().equals(usedTable)).collect(Collectors.toList());
+        selectStatement.setFromList(Collections.singletonList(new HazelcastFromTable(usedTable, true)));
         selectStatement.setFetchColumns(fetchColumns.stream()
                 .map(c -> new HazelcastColumnValue(getFetchValueAliasedColumn(c), pivotRow.getValues().get(c)))
                 .collect(Collectors.toList()));
@@ -62,7 +63,6 @@ public class HazelcastPivotedQuerySynthesisOracle
                 .generateOrderBy();
         selectStatement.setOrderByExpressions(orderBy);
         String selectQuery = HazelcastVisitor.asString(selectStatement);
-        System.out.println("PQS >> " + selectQuery);
         return new SQLQueryAdapter(selectQuery);
     }
 
@@ -87,7 +87,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     private HazelcastConstant generateLimit() {
         if (Randomly.getBoolean()) {
-            return HazelcastConstants.createIntConstant(Integer.MAX_VALUE);
+            return HazelcastConstants.createIntConstant(Byte.MAX_VALUE);
         } else {
             return null;
         }
@@ -119,17 +119,13 @@ public class HazelcastPivotedQuerySynthesisOracle
     @Override
     protected Query<SQLConnection> getContainmentCheckQuery(Query<?> query) throws SQLException {
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT * FROM ("); // ANOTHER SELECT TO USE ORDER BY without restrictions
         sb.append(query.getUnterminatedQueryString());
-        sb.append(") as result WHERE ");
         int i = 0;
         for (HazelcastColumn c : fetchColumns) {
             if (i++ != 0) {
                 sb.append(" AND ");
             }
-            sb.append("result.");
             sb.append(c.getTable().getName());
-            sb.append(c.getName());
             if (pivotRow.getValues().get(c).isNull()) {
                 sb.append(" IS NULL");
             } else {
@@ -147,3 +143,10 @@ public class HazelcastPivotedQuerySynthesisOracle
     }
 
 }
+// SELECT t7_s7oI4z3nz6.__key AS t7_s7oI4z3nz6__key,
+//        t7_s7oI4z3nz6.c0 AS t7_s7oI4z3nz6c0,
+//        t7_s7oI4z3nz6.c1 AS t7_s7oI4z3nz6c1,
+//        t7_s7oI4z3nz6.c2 AS t7_s7oI4z3nz6c2,
+//        t7_s7oI4z3nz6.c3 AS t7_s7oI4z3nz6c3,
+//        t7_s7oI4z3nz6.c4 AS t7_s7oI4z3nz6c4
+//        FROM t7_s7oI4z3nz6 WHERE (t7_s7oI4z3nz6.c1) ISNULL GROUP BY t7_s7oI4z3nz6.__key, t7_s7oI4z3nz6.c0, t7_s7oI4z3nz6.c1, t7_s7oI4z3nz6.c2, t7_s7oI4z3nz6.c3, t7_s7oI4z3nz6.c4, t4_NzYq4kEuYZ.__key, t4_NzYq4kEuYZ.c0 ORDER BY t7_s7oI4z3nz6.c1 DESC, t7_s7oI4z3nz6.c1 DESCt7_s7oI4z3nz6 = 539184101 AND t7_s7oI4z3nz6 IS NULL AND t7_s7oI4z3nz6 IS NULL AND t7_s7oI4z3nz6 IS NULL AND t7_s7oI4z3nz6 IS NULL AND t7_s7oI4z3nz6 = FALSE;

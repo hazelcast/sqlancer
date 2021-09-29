@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.Query;
 import sqlancer.hazelcast.HazelcastGlobalState;
@@ -74,6 +75,7 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
                         HazelcastGlobalState.executeStatement(query.getQueryString());
                         success = true;
                     } catch (HazelcastSqlException e) {
+                        System.out.println("Problems in query : " + query.getQueryString());
                         success = false;
                         ExpectedErrors expectedErrors = query.getExpectedErrors();
                         Throwable rootCause = findRootCause(e);
@@ -95,6 +97,9 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
 
     private Throwable findRootCause(Throwable e) {
         while (e.getCause() != null) {
+            if (e instanceof QueryException) {
+                return e;
+            }
             e = e.getCause();
         }
         return e;
