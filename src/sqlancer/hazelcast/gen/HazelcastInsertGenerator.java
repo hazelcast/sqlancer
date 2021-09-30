@@ -14,6 +14,7 @@ import sqlancer.hazelcast.HazelcastSchema.HazelcastTable;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sqlancer.hazelcast.gen.HazelcastCommon.fillKnownErrors;
 import static sqlancer.hazelcast.gen.HazelcastExpressionGenerator.*;
 
 public final class HazelcastInsertGenerator {
@@ -24,9 +25,8 @@ public final class HazelcastInsertGenerator {
     public static SQLQueryAdapter insert(HazelcastGlobalState globalState) {
         HazelcastTable table = globalState.getSchema().getRandomTable(HazelcastTable::isInsertable);
         ExpectedErrors errors = new ExpectedErrors();
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        HazelcastCommon.addCommonInsertUpdateErrors(errors);
-        HazelcastCommon.addCommonExpressionErrors(errors);
+        fillKnownErrors(errors);
+
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO ");
         sb.append(table.getName());
@@ -66,16 +66,6 @@ public final class HazelcastInsertGenerator {
                 insertRow(globalState, sb, columns);
             }
         }
-        errors.add("Duplicate key");
-        errors.add("Division by zero");
-        errors.add("/ by zero");
-        errors.add("CAST function cannot convert value of type BOOLEAN to type INTEGER");
-        errors.add("Numeric overflow while converting");
-        errors.add("Cannot parse VARCHAR to");
-        errors.add("Cannot parse VARCHAR value to");
-        errors.add("overflow in '*' operator");
-        errors.add("overflow in '+' operator");
-        errors.add("overflow in '+' operator");
         return new SQLQueryAdapter(sb.toString(), errors);
     }
 

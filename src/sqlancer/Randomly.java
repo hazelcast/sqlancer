@@ -199,7 +199,7 @@ public final class Randomly {
                     return l;
                 }
             }
-            long nextLong = getThreadRandom().get().nextInt();
+            long nextLong = getThreadRandom().get().nextInt(Integer.MAX_VALUE / 2);
             addToCache(nextLong);
             return nextLong;
         }

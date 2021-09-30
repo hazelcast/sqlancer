@@ -2,6 +2,7 @@ package sqlancer.hazelcast;
 
 import sqlancer.*;
 import sqlancer.common.DBMSCommon;
+import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.common.query.SQLQueryProvider;
 import sqlancer.common.query.SQLancerResultSet;
@@ -57,15 +58,14 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
     }
 
     protected static int mapActions(HazelcastGlobalState globalState, Action a) {
-        Randomly r = globalState.getRandomly();
         int nrPerformed;
         switch (a) {
             case DELETE:
             case UPDATE:
-                nrPerformed = r.getInteger(0, globalState.getOptions().getMaxNumberUpdates());
+                nrPerformed = globalState.getOptions().getMaxNumberUpdates();
                 break;
             case INSERT:
-                nrPerformed = r.getInteger(0, globalState.getOptions().getMaxNumberInserts());
+                nrPerformed = globalState.getOptions().getMaxNumberInserts();
                 break;
             default:
                 throw new AssertionError(a);
@@ -92,14 +92,17 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
     }
 
     protected void createTables(HazelcastGlobalState globalState, int numTables) throws Exception {
+        ExpectedErrors expectedErrors = new ExpectedErrors();
+        HazelcastCommon.fillKnownErrors(expectedErrors);
         do {
             try {
                 String tableName = DBMSCommon.createTableName(globalState.getSchema().getDatabaseTables().size());
                 SQLQueryAdapter createTable = HazelcastTableGenerator.generate(tableName, globalState.getSchema(),
                         generateOnlyKnown, globalState);
-                HazelcastGlobalState.executeStatement(createTable.getQueryString());
+                HazelcastGlobalState.executeStatement(createTable.getQueryString(), expectedErrors);
                 globalState.getManager().incrementCreateQueryCount();
             } catch (IgnoreMeException e) {
+                System.err.println("UNEXPECTED IgnoreMeException DURING STATEMENT EXECUTION.");
                 e.printStackTrace();
             }
         } while (globalState.getSchema().getDatabaseTables().size() < numTables);

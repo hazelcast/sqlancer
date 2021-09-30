@@ -15,7 +15,7 @@ public class MainOptions {
 
     @Parameter(names = {
             "--num-threads" }, description = "How many threads should run concurrently to test separate databases")
-    private int nrConcurrentThreads = 16; // NOPMD
+    private int nrConcurrentThreads = 4; // NOPMD
 
     @Parameter(names = {
             "--random-seed" }, description = "A seed value != -1 that can be set to make the query and database generation deterministic")
@@ -25,10 +25,10 @@ public class MainOptions {
     private int totalNumberTries = 10; // NOPMD
 
     @Parameter(names = { "--max-num-inserts" }, description = "Specifies how many INSERT statements should be issued")
-    private int maxNumberInserts = 500; // NOPMD
+    private int maxNumberInserts = 2500; // NOPMD
 
     @Parameter(names = { "--max-num-updates" }, description = "Specifies how many UPDATE/DELETE statements should be issued")
-    private int maxNumberUpdates = 10; // NOPMD
+    private int maxNumberUpdates = 1; // NOPMD
 
     @Parameter(names = {
             "--max-expression-depth" }, description = "Specifies the maximum depth of randomly-generated expressions")
@@ -76,7 +76,7 @@ public class MainOptions {
     private boolean printSucceedingStatements; // NOPMD
 
     @Parameter(names = "--test-only-nonempty-tables", description = "Test only databases each of whose tables contain at least a single row", arity = 1)
-    private boolean testOnlyWithMoreThanZeroRows; // NOPMD
+    private boolean testOnlyWithMoreThanZeroRows = true; // NOPMD
 
     @Parameter(names = "--pqs-test-aggregates", description = "Partially test aggregate functions when all tables contain only a single row.", arity = 1)
     private boolean testAggregateFunctions; // NOPMD

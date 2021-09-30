@@ -6,6 +6,7 @@ import com.hazelcast.sql.SqlService;
 import sqlancer.Randomly;
 import sqlancer.SQLConnection;
 import sqlancer.SQLGlobalState;
+import sqlancer.common.query.ExpectedErrors;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static sqlancer.hazelcast.gen.HazelcastCommon.findRootCause;
 
 public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, HazelcastSchema> {
 
@@ -106,8 +108,19 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
         return this.allowedFunctionTypes;
     }
 
-    public static SqlResult executeStatement(String query) {
-        return executeStatementSilently(query);
+    public static SqlResult executeStatement(String query, ExpectedErrors expectedErrors) {
+        SqlResult result = null;
+        try {
+            result = getHazelcast().getSql().execute(query);
+        } catch (Throwable e) {
+            Throwable rootCause = findRootCause(e);
+            if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {
+                System.err.println("UNEXPECTED EXCEPTION DURING STATEMENT EXECUTION.");
+                System.err.println(query);
+                e.printStackTrace();
+            }
+        }
+        return result;
     }
 
     public static SqlResult executeStatementSilently(String query) {

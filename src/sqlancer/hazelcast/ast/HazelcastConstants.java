@@ -63,8 +63,11 @@ public abstract class HazelcastConstants {
 
         @Override
         public HazelcastConstant cast(HazelcastDataType type) {
-            if (type == HazelcastDataType.BOOLEAN) {
-                return this;
+            switch (type) {
+                case BOOLEAN:
+                    return this;
+                case VARCHAR:
+                    return createVarcharConstant(getTextRepresentation());
             }
             return null;
         }

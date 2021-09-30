@@ -9,6 +9,8 @@ import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.Query;
 import sqlancer.hazelcast.HazelcastGlobalState;
 
+import static sqlancer.hazelcast.gen.HazelcastCommon.findRootCause;
+
 public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends AbstractAction<G>> {
 
     private final G globalState;
@@ -72,7 +74,7 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
                 do {
                     query = nextAction.getQuery(globalState);
                     try {
-                        HazelcastGlobalState.executeStatement(query.getQueryString());
+                        HazelcastGlobalState.executeStatement(query.getQueryString(), query.getExpectedErrors());
                         success = true;
                     } catch (HazelcastSqlException e) {
                         System.out.println("Problems in query : " + query.getQueryString());
@@ -93,15 +95,5 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
             }
             total--;
         }
-    }
-
-    private Throwable findRootCause(Throwable e) {
-        while (e.getCause() != null) {
-            if (e instanceof QueryException) {
-                return e;
-            }
-            e = e.getCause();
-        }
-        return e;
     }
 }

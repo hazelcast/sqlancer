@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.hazelcast.sql.impl.QueryException;
 import sqlancer.GlobalState;
 import sqlancer.IgnoreMeException;
 import sqlancer.Main;
@@ -102,8 +103,11 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
 
     public void checkException(Exception e) throws AssertionError {
         if (!expectedErrors.errorIsExpected(e.getMessage())) {
-            e.printStackTrace();
-            throw new AssertionError(query, e);
+            Throwable rootCause = findRootCause(e);
+            if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {
+                e.printStackTrace();
+                throw new AssertionError(query, e);
+            }
         }
     }
 
@@ -132,7 +136,7 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
                 return null;
             }
             return new SQLancerResultSet(result);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Problems in query : " + query);
             s.close();
             Main.nrUnsuccessfulActions.addAndGet(1);
@@ -154,5 +158,15 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
     @Override
     public String getLogString() {
         return getQueryString();
+    }
+
+    private Throwable findRootCause(Throwable e) {
+        while (e.getCause() != null) {
+            if (e instanceof QueryException) {
+                return e;
+            }
+            e = e.getCause();
+        }
+        return e;
     }
 }

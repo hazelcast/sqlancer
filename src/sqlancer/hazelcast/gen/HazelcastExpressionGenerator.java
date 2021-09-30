@@ -79,7 +79,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     }
 
     private enum BooleanExpression {
-        POSTFIX_OPERATOR, NOT, BINARY_LOGICAL_OPERATOR, BINARY_COMPARISON, FUNCTION, CAST, LIKE, BETWEEN, IN_OPERATION,
+        POSTFIX_OPERATOR, NOT, BINARY_LOGICAL_OPERATOR, BINARY_COMPARISON, FUNCTION, LIKE, BETWEEN, IN_OPERATION,
         SIMILAR_TO, POSIX_REGEX
     }
 
@@ -150,9 +150,6 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
             case BINARY_COMPARISON:
                 HazelcastDataType dataType = getMeaningfulType();
                 return generateComparison(depth, dataType);
-            case CAST:
-                return new HazelcastCastOperation(generateExpression(depth + 1),
-                        getCompoundDataType(HazelcastDataType.BOOLEAN));
             case FUNCTION:
                 return generateFunction(depth + 1, HazelcastDataType.BOOLEAN);
             case LIKE:
@@ -244,13 +241,7 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
                         return createColumnOfType(dataType);
                     }
                 }
-            } else {
-                if (Randomly.getBooleanWithRatherLowProbability()) {
-                    return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(dataType));
-                } else {
-                    return generateFunctionWithUnknownResult(depth, dataType);
-                }
-            }
+            } else return generateFunctionWithUnknownResult(depth, dataType);
         } else {
             switch (dataType) {
                 case BOOLEAN:
@@ -287,7 +278,6 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
     }
 
     private enum TextExpression {
-        CAST,
         FUNCTION,
         CONCAT,
         COLLATE
@@ -295,7 +285,6 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
 
     private HazelcastExpression generateTextExpression(int depth) {
         TextExpression option;
-        //TODO: Enable CAST
         List<TextExpression> validOptions = new ArrayList<>(Arrays.asList(TextExpression.FUNCTION,
                 TextExpression.CONCAT, TextExpression.COLLATE));
         if (expectedResult) {
@@ -307,8 +296,6 @@ public class HazelcastExpressionGenerator implements ExpressionGenerator<Hazelca
         option = Randomly.fromList(validOptions);
 
         switch (option) {
-            case CAST:
-                return new HazelcastCastOperation(generateExpression(depth + 1), getCompoundDataType(HazelcastDataType.VARCHAR));
             case FUNCTION:
                 return generateFunction(depth + 1, HazelcastDataType.VARCHAR);
             case CONCAT:

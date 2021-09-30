@@ -49,9 +49,9 @@ public class HazelcastPivotedQuerySynthesisOracle
         selectStatement.setFetchColumns(fetchColumns.stream()
                 .map(c -> new HazelcastColumnValue(getFetchValueAliasedColumn(c), pivotRow.getValues().get(c)))
                 .collect(Collectors.toList()));
-        HazelcastExpression whereClause = generateRectifiedExpression(columns, pivotRow);
+        HazelcastExpression whereClause = generateRectifiedExpression(fetchColumns, pivotRow);
         selectStatement.setWhereClause(whereClause);
-        List<HazelcastExpression> groupByClause = generateGroupByClause(columns, pivotRow);
+        List<HazelcastExpression> groupByClause = generateGroupByClause(fetchColumns, pivotRow);
         selectStatement.setGroupByExpressions(groupByClause);
         HazelcastExpression limitClause = generateLimit();
         selectStatement.setLimitClause(limitClause);
@@ -59,7 +59,7 @@ public class HazelcastPivotedQuerySynthesisOracle
             HazelcastExpression offsetClause = generateOffset();
             selectStatement.setOffsetClause(offsetClause);
         }
-        List<HazelcastExpression> orderBy = new HazelcastExpressionGenerator(globalState).setColumns(columns)
+        List<HazelcastExpression> orderBy = new HazelcastExpressionGenerator(globalState).setColumns(fetchColumns)
                 .generateOrderBy();
         selectStatement.setOrderByExpressions(orderBy);
         String selectQuery = HazelcastVisitor.asString(selectStatement);
@@ -117,24 +117,10 @@ public class HazelcastPivotedQuerySynthesisOracle
     }
 
     @Override
-    protected Query<SQLConnection> getContainmentCheckQuery(Query<?> query) throws SQLException {
+    protected Query<SQLConnection> getContainmentCheckQuery(Query<?> query) {
         StringBuilder sb = new StringBuilder();
         sb.append(query.getUnterminatedQueryString());
-        int i = 0;
-        for (HazelcastColumn c : fetchColumns) {
-            if (i++ != 0) {
-                sb.append(" AND ");
-            }
-            sb.append(c.getTable().getName());
-            if (pivotRow.getValues().get(c).isNull()) {
-                sb.append(" IS NULL");
-            } else {
-                sb.append(" = ");
-                sb.append(pivotRow.getValues().get(c).getTextRepresentation());
-            }
-        }
-        String resultingQueryString = sb.toString();
-        return new SQLQueryAdapter(resultingQueryString, errors);
+        return new SQLQueryAdapter(sb.toString(), errors);
     }
 
     @Override

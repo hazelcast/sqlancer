@@ -4,7 +4,6 @@ import com.hazelcast.sql.SqlRow;
 import sqlancer.IgnoreMeException;
 import sqlancer.Randomly;
 import sqlancer.SQLConnection;
-import sqlancer.common.DBMSCommon;
 import sqlancer.common.schema.*;
 import sqlancer.hazelcast.ast.HazelcastConstant;
 import sqlancer.hazelcast.ast.HazelcastConstants;
@@ -78,8 +77,11 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                     }
                 }
             } catch (SQLException e) {
+                System.err.println("EXCEPTION DURING RANDOM ROW SELECTION.");
                 e.printStackTrace();
             }
+
+            assert !nonEmptyMaps.isEmpty() : "Non-empty maps should exists. Overall maps count : " + tableNames.size();
 
             final String tableName = Randomly.fromList(new ArrayList<>(nonEmptyMaps));
             List<HazelcastColumn> tableColumns = getColumns()
@@ -133,9 +135,8 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                 if (randomRowValues.next()) throw new AssertionError();
                 return new HazelcastRowValue(this, usedTable, values);
             } catch (SQLException e) {
-                System.err.println("===================================");
+                System.err.println("===============>");
                 e.printStackTrace();
-                System.err.println("===================================");
                 throw new IgnoreMeException();
             }
 

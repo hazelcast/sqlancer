@@ -38,7 +38,6 @@ public final class HazelcastUpdateGenerator {
         final String keyColumn = "__key";   // __key column cannot be updated
         List<HazelcastColumn> columns = randomTable.getRandomNonEmptyColumnSubset().stream()
                 .filter(column -> !column.getName().equals(keyColumn)).collect(Collectors.toList());
-        HazelcastCommon.addCommonInsertUpdateErrors(errors);
         //Skip running UPDATE query if table has only __key column
         if (columns.size() < 1) {
             return new SQLQueryAdapter("", errors, false);
