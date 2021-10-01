@@ -106,7 +106,7 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
             Throwable rootCause = findRootCause(e);
             if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {
                 e.printStackTrace();
-                throw new AssertionError(query, e);
+                throw new AssertionError(e.getMessage(), e);
             }
         }
     }
