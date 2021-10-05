@@ -55,7 +55,7 @@ public class HazelcastPrefixOperation implements HazelcastExpression {
                     throw new IgnoreMeException();
                 }
                 try {
-                    return HazelcastConstants.createIntConstant(-expectedValue.asInt());
+                    return HazelcastConstants.createLongConstant(-expectedValue.asInt());
                 } catch (UnsupportedOperationException e) {
                     return null;
                 }

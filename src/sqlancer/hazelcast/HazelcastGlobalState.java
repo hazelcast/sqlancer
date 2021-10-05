@@ -22,17 +22,11 @@ import static java.util.Arrays.asList;
 import static sqlancer.hazelcast.gen.HazelcastCommon.findRootCause;
 
 public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, HazelcastSchema> {
-
-    public static final char IMMUTABLE = 'i';
-    public static final char STABLE = 's';
-    public static final char VOLATILE = 'v';
-
     private List<String> operators = Collections.emptyList();
     private List<String> collates = Collections.emptyList();
     private List<String> opClasses = Collections.emptyList();
     // store and allow filtering by function volatility classifications
     private final Map<String, Character> functionsAndTypes = new HashMap<>();
-    private List<Character> allowedFunctionTypes = asList(IMMUTABLE, STABLE, VOLATILE);
 
     @Override
     public void setConnection(SQLConnection con) {
@@ -96,22 +90,11 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
         return this.functionsAndTypes;
     }
 
-    public void setAllowedFunctionTypes(List<Character> types) {
-        this.allowedFunctionTypes = types;
-    }
-
-    public void setDefaultAllowedFunctionTypes() {
-        this.allowedFunctionTypes = asList(IMMUTABLE, STABLE, VOLATILE);
-    }
-
-    public List<Character> getAllowedFunctionTypes() {
-        return this.allowedFunctionTypes;
-    }
-
     public static SqlResult executeStatement(String query, ExpectedErrors expectedErrors) {
         SqlResult result = null;
         try {
             result = getHazelcast().getSql().execute(query);
+            System.out.println(query);
         } catch (Throwable e) {
             Throwable rootCause = findRootCause(e);
             if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {

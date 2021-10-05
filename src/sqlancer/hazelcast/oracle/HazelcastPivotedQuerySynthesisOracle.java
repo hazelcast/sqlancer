@@ -6,17 +6,16 @@ import sqlancer.common.oracle.PivotedQuerySynthesisBase;
 import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.hazelcast.HazelcastGlobalState;
-import sqlancer.hazelcast.HazelcastSchema;
-import sqlancer.hazelcast.HazelcastVisitor;
-import sqlancer.hazelcast.ast.*;
-import sqlancer.hazelcast.gen.HazelcastCommon;
-import sqlancer.hazelcast.gen.HazelcastExpressionGenerator;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastColumn;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastDataType;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastRowValue;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastTables;
+import sqlancer.hazelcast.HazelcastVisitor;
+import sqlancer.hazelcast.ast.*;
 import sqlancer.hazelcast.ast.HazelcastPostfixOperation.PostfixOperator;
 import sqlancer.hazelcast.ast.HazelcastSelect.HazelcastFromTable;
+import sqlancer.hazelcast.gen.HazelcastCommon;
+import sqlancer.hazelcast.gen.HazelcastExpressionGenerator;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -25,8 +24,6 @@ import java.util.stream.Collectors;
 
 public class HazelcastPivotedQuerySynthesisOracle
         extends PivotedQuerySynthesisBase<HazelcastGlobalState, HazelcastRowValue, HazelcastExpression, SQLConnection> {
-
-    private List<HazelcastColumn> fetchColumns;
 
     public HazelcastPivotedQuerySynthesisOracle(HazelcastGlobalState globalState) throws SQLException {
         super(globalState);
@@ -40,12 +37,11 @@ public class HazelcastPivotedQuerySynthesisOracle
 
         HazelcastSelect selectStatement = new HazelcastSelect();
         selectStatement.setSelectType(Randomly.fromOptions(HazelcastSelect.SelectType.values()));
-        List<HazelcastColumn> columns = randomFromTables.getColumns();
         pivotRow = randomFromTables.getRandomRowValue(globalState.getConnection());
-        HazelcastSchema.HazelcastTable usedTable = pivotRow.getUsedTable();
 
-        fetchColumns = columns.stream().filter(c -> c.getTable().equals(usedTable)).collect(Collectors.toList());
-        selectStatement.setFromList(Collections.singletonList(new HazelcastFromTable(usedTable, true)));
+        List<HazelcastColumn> fetchColumns = randomFromTables.getColumns();
+        selectStatement.setFromList(randomFromTables.getTables().stream().map(t -> new HazelcastFromTable(t, true))
+                .collect(Collectors.toList()));
         selectStatement.setFetchColumns(fetchColumns.stream()
                 .map(c -> new HazelcastColumnValue(getFetchValueAliasedColumn(c), pivotRow.getValues().get(c)))
                 .collect(Collectors.toList()));
@@ -63,6 +59,7 @@ public class HazelcastPivotedQuerySynthesisOracle
                 .generateOrderBy();
         selectStatement.setOrderByExpressions(orderBy);
         String selectQuery = HazelcastVisitor.asString(selectStatement);
+        System.out.println(">> " + selectQuery);
         return new SQLQueryAdapter(selectQuery);
     }
 
@@ -87,7 +84,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     private HazelcastConstant generateLimit() {
         if (Randomly.getBoolean()) {
-            return HazelcastConstants.createIntConstant(Byte.MAX_VALUE);
+            return HazelcastConstants.createLongConstant(Integer.MAX_VALUE);
         } else {
             return null;
         }
@@ -95,7 +92,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     private HazelcastExpression generateOffset() {
         if (Randomly.getBoolean()) {
-            return HazelcastConstants.createIntConstant(0);
+            return HazelcastConstants.createLongConstant(0);
         } else {
             return null;
         }
@@ -129,10 +126,3 @@ public class HazelcastPivotedQuerySynthesisOracle
     }
 
 }
-// SELECT t7_s7oI4z3nz6.__key AS t7_s7oI4z3nz6__key,
-//        t7_s7oI4z3nz6.c0 AS t7_s7oI4z3nz6c0,
-//        t7_s7oI4z3nz6.c1 AS t7_s7oI4z3nz6c1,
-//        t7_s7oI4z3nz6.c2 AS t7_s7oI4z3nz6c2,
-//        t7_s7oI4z3nz6.c3 AS t7_s7oI4z3nz6c3,
-//        t7_s7oI4z3nz6.c4 AS t7_s7oI4z3nz6c4
-//        FROM t7_s7oI4z3nz6 WHERE (t7_s7oI4z3nz6.c1) ISNULL GROUP BY t7_s7oI4z3nz6.__key, t7_s7oI4z3nz6.c0, t7_s7oI4z3nz6.c1, t7_s7oI4z3nz6.c2, t7_s7oI4z3nz6.c3, t7_s7oI4z3nz6.c4, t4_NzYq4kEuYZ.__key, t4_NzYq4kEuYZ.c0 ORDER BY t7_s7oI4z3nz6.c1 DESC, t7_s7oI4z3nz6.c1 DESCt7_s7oI4z3nz6 = 539184101 AND t7_s7oI4z3nz6 IS NULL AND t7_s7oI4z3nz6 IS NULL AND t7_s7oI4z3nz6 IS NULL AND t7_s7oI4z3nz6 IS NULL AND t7_s7oI4z3nz6 = FALSE;

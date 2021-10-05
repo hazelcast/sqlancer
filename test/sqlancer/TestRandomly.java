@@ -227,7 +227,7 @@ public class TestRandomly {
         List<String> values = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             values.add(String.valueOf(r.getDouble()));
-            values.add(String.valueOf(r.getInteger()));
+            values.add(String.valueOf(r.getLong(0, Long.MAX_VALUE)));
             values.add(String.valueOf(r.getString()));
             values.add(String.valueOf(Randomly.getBoolean()));
         }

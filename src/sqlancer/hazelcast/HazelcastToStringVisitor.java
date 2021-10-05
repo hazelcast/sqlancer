@@ -174,12 +174,12 @@ public final class HazelcastToStringVisitor extends ToStringVisitor<HazelcastExp
             case BOOLEAN:
                 sb.append("BOOLEAN");
                 break;
-            case TINYINT:
-                sb.append("TINYINT");
-                break;
-            case SMALLINT:
-                sb.append("SMALLINT");
-                break;
+//            case TINYINT:
+//                sb.append("TINYINT");
+//                break;
+//            case SMALLINT:
+//                sb.append("SMALLINT");
+//                break;
             case INTEGER: // TODO support also other int types
                 sb.append("INTEGER");
                 break;

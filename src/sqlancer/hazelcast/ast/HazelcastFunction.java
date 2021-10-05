@@ -39,7 +39,29 @@ public class HazelcastFunction implements HazelcastExpression {
                     return HazelcastConstants.createNullConstant();
                 } else {
                     return HazelcastConstants
-                            .createIntConstant(Math.abs(evaluatedArgs[0].cast(HazelcastDataType.INTEGER).asInt()));
+                            .createLongConstant(Math.abs(evaluatedArgs[0].cast(HazelcastDataType.INTEGER).asInt()));
+                }
+            }
+
+            @Override
+            public boolean supportsReturnType(HazelcastDataType type) {
+                return type == HazelcastDataType.INTEGER;
+            }
+
+            @Override
+            public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
+                return new HazelcastDataType[]{returnType};
+            }
+
+        },
+        SIGN(1, "sign") {
+            @Override
+            public HazelcastConstant apply(HazelcastConstant[] evaluatedArgs, HazelcastExpression... args) {
+                if (evaluatedArgs[0].isNull()) {
+                    return HazelcastConstants.createNullConstant();
+                } else {
+                    return HazelcastConstants
+                            .createLongConstant(Math.abs(evaluatedArgs[0].cast(HazelcastDataType.INTEGER).asInt()));
                 }
             }
 
@@ -83,7 +105,7 @@ public class HazelcastFunction implements HazelcastExpression {
                     return HazelcastConstants.createNullConstant();
                 }
                 String text = evaluatedArgs[0].asString();
-                return HazelcastConstants.createIntConstant(text.length());
+                return HazelcastConstants.createLongConstant(text.length());
             }
 
             @Override
@@ -117,97 +139,40 @@ public class HazelcastFunction implements HazelcastExpression {
                 return new HazelcastDataType[]{HazelcastDataType.VARCHAR};
             }
 
-        },
-        // NULL_IF(2, "nullif") {
-        //
-        // @Override
-        // public PostgresConstant apply(PostgresConstant[] evaluatedArgs, HazelcastExpression[] args) {
-        // PostgresConstant equals = evaluatedArgs[0].isEquals(evaluatedArgs[1]);
-        // if (equals.isBoolean() && equals.asBoolean()) {
-        // return PostgresConstant.createNullConstant();
-        // } else {
-        // // TODO: SELECT (nullif('1', FALSE)); yields '1', but should yield TRUE
-        // return evaluatedArgs[0];
-        // }
-        // }
-        //
-        // @Override
-        // public boolean supportsReturnType(PostgresDataType type) {
-        // return true;
-        // }
-        //
-        // @Override
-        // public PostgresDataType[] getInputTypesForReturnType(PostgresDataType returnType, int nrArguments) {
-        // return getType(nrArguments, returnType);
-        // }
-        //
-        // @Override
-        // public boolean checkArguments(HazelcastExpression[] constants) {
-        // for (HazelcastExpression e : constants) {
-        // if (!(e instanceof PostgresNullConstant)) {
-        // return true;
-        // }
-        // }
-        // return false;
-        // }
-        //
-        // },
-        NUM_NONNULLS(1, "num_nonnulls") {
-            @Override
-            public HazelcastConstant apply(HazelcastConstant[] args, HazelcastExpression... origArgs) {
-                int nr = 0;
-                for (HazelcastConstant c : args) {
-                    if (!c.isNull()) {
-                        nr++;
-                    }
-                }
-                return HazelcastConstants.createIntConstant(nr);
-            }
-
-            @Override
-            public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return getRandomTypes(nrArguments);
-            }
-
-            @Override
-            public boolean supportsReturnType(HazelcastDataType type) {
-                return type == HazelcastDataType.INTEGER;
-            }
-
-            @Override
-            public boolean isVariadic() {
-                return true;
-            }
-
-        },
-        NUM_NULLS(1, "num_nulls") {
-            @Override
-            public HazelcastConstant apply(HazelcastConstant[] args, HazelcastExpression... origArgs) {
-                int nr = 0;
-                for (HazelcastConstant c : args) {
-                    if (c.isNull()) {
-                        nr++;
-                    }
-                }
-                return HazelcastConstants.createIntConstant(nr);
-            }
-
-            @Override
-            public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
-                return getRandomTypes(nrArguments);
-            }
-
-            @Override
-            public boolean supportsReturnType(HazelcastDataType type) {
-                return type == HazelcastDataType.INTEGER;
-            }
-
-            @Override
-            public boolean isVariadic() {
-                return true;
-            }
-
         };
+//        NULL_IF(2, "nullif") {
+//            @Override
+//            public HazelcastConstant apply(HazelcastConstant[] evaluatedArgs, HazelcastExpression[] args) {
+//                HazelcastConstant equals = evaluatedArgs[0].isEquals(evaluatedArgs[1]);
+//                if (equals.isBoolean() && equals.asBoolean()) {
+//                    return HazelcastConstants.createNullConstant();
+//                } else {
+//                    // TODO: SELECT (nullif('1', FALSE)); yields '1', but should yield TRUE
+//                    return evaluatedArgs[0];
+//                }
+//            }
+//
+//            @Override
+//            public boolean supportsReturnType(HazelcastDataType type) {
+//                return true;
+//            }
+//
+//            @Override
+//            public HazelcastDataType[] getInputTypesForReturnType(HazelcastDataType returnType, int nrArguments) {
+//                return getType(nrArguments, returnType);
+//            }
+//
+//            @Override
+//            public boolean checkArguments(HazelcastExpression[] constants) {
+//                for (HazelcastExpression e : constants) {
+//                    if (!(e instanceof HazelcastConstants.HzNullConstant)) {
+//                        return true;
+//                    }
+//                }
+//                return false;
+//            }
+//
+//        };
 
         private String functionName;
         final int nrArgs;

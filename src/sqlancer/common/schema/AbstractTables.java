@@ -11,12 +11,18 @@ public class AbstractTables<T extends AbstractTable<C, ?, ?>, C extends Abstract
     private final List<T> tables;
     private final List<C> columns;
 
+    protected List<T> usedTables;
+    protected List<C> usedColumns;
+
     public AbstractTables(List<T> tables) {
         this.tables = tables;
         columns = new ArrayList<>();
         for (T t : tables) {
             columns.addAll(t.getColumns());
         }
+
+        usedTables = new ArrayList<>();
+        usedColumns = new ArrayList<>();
     }
 
     public String tableNamesAsString() {
@@ -29,6 +35,14 @@ public class AbstractTables<T extends AbstractTable<C, ?, ?>, C extends Abstract
 
     public List<C> getColumns() {
         return columns;
+    }
+
+    public List<T> getUsedTables() {
+        return usedTables;
+    }
+
+    public List<C> getUsedColumns() {
+        return usedColumns;
     }
 
     public String columnNamesAsString(Function<C, String> function) {

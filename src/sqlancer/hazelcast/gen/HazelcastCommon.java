@@ -17,6 +17,7 @@ public final class HazelcastCommon {
         errors.add("/ by zero");
         errors.add("CAST function cannot convert value");
         errors.add("Cannot parse VARCHAR");
+        errors.add("SUBSTRING \"start\" operand must be positive");
         HazelcastCommon.addCommonExpressionErrors(errors);
         HazelcastCommon.addCommonMathExpressionErrors(errors);
     }
@@ -51,32 +52,22 @@ public final class HazelcastCommon {
         boolean serial = false;
         switch (type) {
             case BOOLEAN:
-                sb.append("boolean");
+                sb.append("BOOLEAN");
                 break;
             case INTEGER:
                 // TODO: support BIGINT
-                sb.append(Randomly.fromOptions("tinyint", "smallint", "integer", "bigint"));
+                sb.append(Randomly.fromOptions("INTEGER", "BIGINT"));
                 break;
             case VARCHAR:
                 // TODO: support CHAR (without VAR)
                 sb.append("VARCHAR");
-                //TODO: Support collations
-//            if (Randomly.getBoolean() && !HazelcastProvider.generateOnlyKnown) {
-//                sb.append(" COLLATE ");
-//                sb.append('"');
-//                sb.append(Randomly.fromList(opClasses));
-//                sb.append('"');
-//            }
                 break;
             case DECIMAL:
                 sb.append("DECIMAL");
                 break;
             case FLOAT:
-                sb.append("REAL");
+                sb.append("FLOAT");
                 break;
-//        case REAL:
-//            sb.append("FLOAT");
-//            break;
             default:
                 throw new AssertionError(type);
         }

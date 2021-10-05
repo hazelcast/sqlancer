@@ -1,11 +1,17 @@
 package sqlancer.hazelcast.ast;
 
 import sqlancer.IgnoreMeException;
+import sqlancer.Randomly;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastDataType;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class HazelcastConstants {
+
+    public static Set<Long> usedKeyCache = new HashSet<>();
 
     public static class BooleanConstant extends HazelcastConstant {
 
@@ -179,8 +185,8 @@ public abstract class HazelcastConstants {
                     }
                 case INTEGER:
                     try {
-                        int asInt = Integer.parseInt(s);
-                        return HazelcastConstants.createIntConstant(asInt);
+                        long asInt = Long.parseLong(s);
+                        return HazelcastConstants.createLongConstant(asInt);
                     } catch (NumberFormatException e) {
                         return null;
                     }
@@ -213,89 +219,93 @@ public abstract class HazelcastConstants {
 
     }
 
-    public static class SmallIntConstant extends HazelcastConstant {
-        private final short val;
-
-        public SmallIntConstant(short val) {
-            this.val = val;
-        }
-
-        @Override
-        public String getTextRepresentation() {
-            return String.valueOf(val);
-        }
-
-        @Override
-        public HazelcastDataType getExpressionType() {
-            return HazelcastDataType.SMALLINT;
-        }
-
-        @Override
-        public long asInt() {
-            return val;
-        }
-
-        @Override
-        public boolean isInt() {
-            return true;
-        }
-
-        @Override
-        public HazelcastConstant isEquals(HazelcastConstant rightVal) {
-            if (rightVal.isNull()) {
-                return HazelcastConstants.createNullConstant();
-            } else if (rightVal.isBoolean()) {
-                return cast(HazelcastDataType.BOOLEAN).isEquals(rightVal);
-            } else if (rightVal.isInt()) {
-                return HazelcastConstants.createBooleanConstant(val == rightVal.asInt());
-            } else if (rightVal.isString()) {
-                return HazelcastConstants.createBooleanConstant(val == rightVal.cast(HazelcastDataType.INTEGER).asInt());
-            } else {
-                throw new AssertionError(rightVal);
-            }
-        }
-
-        @Override
-        protected HazelcastConstant isLessThan(HazelcastConstant rightVal) {
-            if (rightVal.isNull()) {
-                return HazelcastConstants.createNullConstant();
-            } else if (rightVal.isInt()) {
-                return HazelcastConstants.createBooleanConstant(val < rightVal.asInt());
-            } else if (rightVal.isBoolean()) {
-                throw new AssertionError(rightVal);
-            } else if (rightVal.isString()) {
-                return HazelcastConstants.createBooleanConstant(val < rightVal.cast(HazelcastDataType.INTEGER).asInt());
-            } else {
-                throw new IgnoreMeException();
-            }
-
-        }
-
-        @Override
-        public HazelcastConstant cast(HazelcastDataType type) {
-            switch (type) {
-                case BOOLEAN:
-                    return HazelcastConstants.createBooleanConstant(val != 0);
-                case SMALLINT:
-                    return createSmallIntConstant(val);
-                case INTEGER:
-                    return HazelcastConstants.createIntConstant(val);
-                case VARCHAR:
-                    return HazelcastConstants.createVarcharConstant(String.valueOf(val));
-                default:
-                    return null;
-            }
-        }
-
-        @Override
-        public String getUnquotedTextRepresentation() {
-            return getTextRepresentation();
-        }
-
-    }
+//    public static class SmallIntConstant extends HazelcastConstant {
+//        private final short val;
+//
+//        public SmallIntConstant(short val) {
+//            this.val = val;
+//        }
+//
+//        @Override
+//        public String getTextRepresentation() {
+//            return String.valueOf(val);
+//        }
+//
+//        @Override
+//        public HazelcastDataType getExpressionType() {
+//            return HazelcastDataType.SMALLINT;
+//        }
+//
+//        @Override
+//        public long asInt() {
+//            return val;
+//        }
+//
+//        @Override
+//        public boolean isInt() {
+//            return true;
+//        }
+//
+//        @Override
+//        public HazelcastConstant isEquals(HazelcastConstant rightVal) {
+//            if (rightVal.isNull()) {
+//                return HazelcastConstants.createNullConstant();
+//            } else if (rightVal.isBoolean()) {
+//                return cast(HazelcastDataType.BOOLEAN).isEquals(rightVal);
+//            } else if (rightVal.isInt()) {
+//                return HazelcastConstants.createBooleanConstant(val == rightVal.asInt());
+//            } else if (rightVal.isString()) {
+//                return HazelcastConstants.createBooleanConstant(val == rightVal.cast(HazelcastDataType.INTEGER).asInt());
+//            } else {
+//                throw new AssertionError(rightVal);
+//            }
+//        }
+//
+//        @Override
+//        protected HazelcastConstant isLessThan(HazelcastConstant rightVal) {
+//            if (rightVal.isNull()) {
+//                return HazelcastConstants.createNullConstant();
+//            } else if (rightVal.isInt()) {
+//                return HazelcastConstants.createBooleanConstant(val < rightVal.asInt());
+//            } else if (rightVal.isBoolean()) {
+//                throw new AssertionError(rightVal);
+//            } else if (rightVal.isString()) {
+//                return HazelcastConstants.createBooleanConstant(val < rightVal.cast(HazelcastDataType.INTEGER).asInt());
+//            } else {
+//                throw new IgnoreMeException();
+//            }
+//
+//        }
+//
+//        @Override
+//        public HazelcastConstant cast(HazelcastDataType type) {
+//            switch (type) {
+//                case BOOLEAN:
+//                    return HazelcastConstants.createBooleanConstant(val != 0);
+//                case SMALLINT:
+//                    return createSmallIntConstant(val);
+//                case INTEGER:
+//                    return HazelcastConstants.createIntConstant(val);
+//                case VARCHAR:
+//                    return HazelcastConstants.createVarcharConstant(String.valueOf(val));
+//                default:
+//                    return null;
+//            }
+//        }
+//
+//        @Override
+//        public String getUnquotedTextRepresentation() {
+//            return getTextRepresentation();
+//        }
+//
+//    }
 
     public static class IntConstant extends HazelcastConstant {
-        private final int val;
+        private final long val;
+
+        public IntConstant(long val) {
+            this.val = val;
+        }
 
         public IntConstant(int val) {
             this.val = val;
@@ -502,7 +512,7 @@ public abstract class HazelcastConstants {
                 case BOOLEAN:
                     return HazelcastConstants.createBooleanConstant(val != 0);
                 case INTEGER:
-                    return HazelcastConstants.createIntConstant(new Float(val).longValue());
+                    return HazelcastConstants.createIntConstant(new Float(val).intValue());
                 default:
                     return null;
             }
@@ -588,7 +598,7 @@ public abstract class HazelcastConstants {
                 case BOOLEAN:
                     return HazelcastConstants.createBooleanConstant(val != 0);
                 case INTEGER:
-                    return HazelcastConstants.createIntConstant(new Float(val).longValue());
+                    return HazelcastConstants.createIntConstant(new Float(val).intValue());
                 default:
                     return null;
             }
@@ -612,7 +622,8 @@ public abstract class HazelcastConstants {
     }
 
     public static HazelcastConstant createSmallIntConstant(short val) {
-        return new SmallIntConstant(val);
+//        return new SmallIntConstant(val);
+        return new IntConstant(val);
     }
 
     public static HazelcastConstant createIntConstant(int val) {
@@ -620,7 +631,18 @@ public abstract class HazelcastConstants {
     }
 
     public static HazelcastConstant createIntConstant(long val) {
-        return new IntConstant((int) val);
+        return createLongConstant(val);
+    }
+
+    public static HazelcastConstant createLongConstant(long val) {
+        long nextInt = val;
+        // To reduce count of duplicated keys and to enhance entropy, we will use keys cache :)
+        while (usedKeyCache.contains(nextInt)) {
+            long next = (int) Randomly.getNotCachedInteger(0, (Integer.MAX_VALUE));
+            nextInt = next;
+        }
+        usedKeyCache.add(nextInt);
+        return new IntConstant(nextInt);
     }
 
     public static HazelcastConstant createBooleanConstant(boolean val) {

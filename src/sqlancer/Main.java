@@ -43,6 +43,7 @@ public final class Main {
     public static final File LOG_DIRECTORY = new File("logs");
     public static volatile AtomicLong nrQueries = new AtomicLong();
     public static volatile AtomicLong nrCreateQueries = new AtomicLong();
+    public static volatile AtomicLong nrInsertQueriesTryout = new AtomicLong();
     public static volatile AtomicLong nrDatabases = new AtomicLong();
     public static volatile AtomicLong nrSuccessfulActions = new AtomicLong();
     public static volatile AtomicLong nrUnsuccessfulActions = new AtomicLong();
@@ -253,6 +254,10 @@ public final class Main {
             Main.nrQueries.addAndGet(1);
         }
 
+        public static void incrementInsertQueryTryout() {
+            Main.nrInsertQueriesTryout.addAndGet(1);
+        }
+
         public void incrementCreateQueryCount() {
             Main.nrCreateQueries.addAndGet(1);
         }
@@ -278,7 +283,7 @@ public final class Main {
         private final Randomly r;
 
         public DBMSExecutor(DatabaseProvider<G, O, C> provider, MainOptions options, O dbmsSpecificOptions,
-                String databaseName, Randomly r) {
+                            String databaseName, Randomly r) {
             this.provider = provider;
             this.options = options;
             this.databaseName = databaseName;
@@ -428,7 +433,6 @@ public final class Main {
             startProgressMonitor();
             if (options.printProgressSummary()) {
                 Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-
                     @Override
                     public void run() {
                         System.out.println("Overall execution statistics");
@@ -509,7 +513,7 @@ public final class Main {
                 }
 
                 private boolean run(MainOptions options, ExecutorService execService,
-                        DBMSExecutorFactory<?, ?, ?> executorFactory, Randomly r, final String databaseName) {
+                                    DBMSExecutorFactory<?, ?, ?> executorFactory, Randomly r, final String databaseName) {
                     DBMSExecutor<?, ?, ?> executor = executorFactory.getDBMSExecutor(databaseName, r);
                     try {
                         executor.run();
@@ -552,6 +556,7 @@ public final class Main {
 
     static List<DatabaseProvider<?, ?, ?>> getDBMSProviders() {
         List<DatabaseProvider<?, ?, ?>> providers = new ArrayList<>();
+        providers.add(new HazelcastProvider());
         providers.add(new SQLite3Provider());
         providers.add(new CockroachDBProvider());
         providers.add(new MySQLProvider());
@@ -562,7 +567,6 @@ public final class Main {
         providers.add(new ClickHouseProvider());
         providers.add(new DuckDBProvider());
         providers.add(new H2Provider());
-        providers.add(new HazelcastProvider());
         return providers;
     }
 
@@ -582,6 +586,7 @@ public final class Main {
             private long timeMillis = System.currentTimeMillis();
             private long lastNrQueries;
             private long lastNrCreateQueries;
+            private long lastNrInsertQueries;
             private long lastNrDbs;
 
             {
@@ -600,6 +605,8 @@ public final class Main {
                 long nrCurrentCreateQueries = currentNrCreateQueries - lastNrCreateQueries;
                 double createThroughput = nrCurrentCreateQueries / (elapsedTimeMillis / 1000d);
 
+                long currentNrInsertQueries = nrInsertQueriesTryout.get();
+
                 long currentNrDbs = nrDatabases.get();
                 long nrCurrentDbs = currentNrDbs - lastNrDbs;
                 double throughputDbs = nrCurrentDbs / (elapsedTimeMillis / 1000d);
@@ -607,14 +614,20 @@ public final class Main {
                         / (nrSuccessfulActions.get() + nrUnsuccessfulActions.get()));
                 DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                 Date date = new Date();
-                System.out.println(String.format(
-                        "[%s] Executed %d SELECT queries (%d queries/s; %.2f/s dbs, successful statements: %2d%%). Threads shut down: %d.",
-                        dateFormat.format(date), currentNrQueries, (int) throughput, throughputDbs,
-                        successfulStatementsRatio, threadsShutdown));
-                System.out.println(String.format(
-                        "[%s] Executed %d CREATE queries (%d queries/s; %.2f/s dbs, successful statements: %2d%%). Threads shut down: %d.",
+                System.out.printf(
+                        "[%s] %d successfully executed statements overall.%n",
+                        dateFormat.format(date), nrSuccessfulActions.get());
+                System.out.printf(
+                        "[%s] Executed %d CREATE queries (%d queries/s; %.2f/s dbs, successful statements: %2d%%). Threads shut down: %d.%n",
                         dateFormat.format(date), currentNrCreateQueries, (int) createThroughput, throughputDbs,
-                        successfulStatementsRatio, threadsShutdown));
+                        successfulStatementsRatio, threadsShutdown);
+                System.out.printf(
+                        "[%s] Executed %d SELECT queries (%d queries/s; %.2f/s dbs, successful statements: %2d%%). Threads shut down: %d.%n",
+                        dateFormat.format(date), currentNrQueries, (int) throughput, throughputDbs,
+                        successfulStatementsRatio, threadsShutdown);
+                System.out.printf(
+                        "[%s] Tried to execute %d INSERT queries. Threads shut down: %d. \n",
+                        dateFormat.format(date), currentNrInsertQueries, threadsShutdown);
                 timeMillis = System.currentTimeMillis();
                 lastNrQueries = currentNrQueries;
                 lastNrDbs = currentNrDbs;

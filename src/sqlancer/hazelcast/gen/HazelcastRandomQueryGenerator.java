@@ -49,10 +49,10 @@ public final class HazelcastRandomQueryGenerator {
             select.setOrderByExpressions(gen.generateOrderBy());
         }
         if (Randomly.getBoolean()) {
-            select.setLimitClause(HazelcastConstants.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
+            select.setLimitClause(HazelcastConstants.createLongConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             if (Randomly.getBoolean()) {
                 select.setOffsetClause(
-                        HazelcastConstants.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
+                        HazelcastConstants.createLongConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             }
         }
         if (Randomly.getBooleanWithRatherLowProbability()) {

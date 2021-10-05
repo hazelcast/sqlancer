@@ -10,37 +10,37 @@ import java.util.concurrent.ThreadLocalRandom;
 @Parameters(separators = "=", commandDescription = "Options applicable to all DBMS")
 public class MainOptions {
 
-    @Parameter(names = { "--help", "-h" }, description = "Lists all supported options and commands", help = true)
+    @Parameter(names = {"--help", "-h"}, description = "Lists all supported options and commands", help = true)
     private boolean help; // NOPMD
 
     @Parameter(names = {
-            "--num-threads" }, description = "How many threads should run concurrently to test separate databases")
+            "--num-threads"}, description = "How many threads should run concurrently to test separate databases")
     private int nrConcurrentThreads = 4; // NOPMD
 
     @Parameter(names = {
-            "--random-seed" }, description = "A seed value != -1 that can be set to make the query and database generation deterministic")
+            "--random-seed"}, description = "A seed value != -1 that can be set to make the query and database generation deterministic")
     private long randomSeed = ThreadLocalRandom.current().nextLong(); // NOPMD
 
-    @Parameter(names = { "--num-tries" }, description = "Specifies after how many found errors to stop testing")
+    @Parameter(names = {"--num-tries"}, description = "Specifies after how many found errors to stop testing")
     private int totalNumberTries = 10; // NOPMD
 
-    @Parameter(names = { "--max-num-inserts" }, description = "Specifies how many INSERT statements should be issued")
-    private int maxNumberInserts = 2500; // NOPMD
+    @Parameter(names = {"--max-num-inserts"}, description = "Specifies how many INSERT statements should be issued")
+    private int maxNumberInserts = 250; // NOPMD
 
-    @Parameter(names = { "--max-num-updates" }, description = "Specifies how many UPDATE/DELETE statements should be issued")
+    @Parameter(names = {"--max-num-updates"}, description = "Specifies how many UPDATE/DELETE statements should be issued")
     private int maxNumberUpdates = 1; // NOPMD
 
     @Parameter(names = {
-            "--max-expression-depth" }, description = "Specifies the maximum depth of randomly-generated expressions")
+            "--max-expression-depth"}, description = "Specifies the maximum depth of randomly-generated expressions")
     private int maxExpressionDepth = 2; // NOPMD
 
     @Parameter(names = {
-            "--num-queries" }, description = "Specifies the number of queries to be issued to a database before creating a new database")
-    private int nrQueries = 100000; // NOPMD
+            "--num-queries"}, description = "Specifies the number of queries to be issued to a database before creating a new database")
+    private int nrQueries = 10000; // NOPMD
 
     @Parameter(names = {
-            "--num-statement-kind-retries" }, description = "Specifies the number of times a specific statement kind (e.g., INSERT) should be retried when the DBMS indicates that it failed")
-    private int nrStatementRetryCount = 1000; // NOPMD
+            "--num-statement-kind-retries"}, description = "Specifies the number of times a specific statement kind (e.g., INSERT) should be retried when the DBMS indicates that it failed")
+    private int nrStatementRetryCount = 2000; // NOPMD
 
     @Parameter(names = "--log-each-select", description = "Logs every statement issued", arity = 1)
     private boolean logEachSelect = true; // NOPMD

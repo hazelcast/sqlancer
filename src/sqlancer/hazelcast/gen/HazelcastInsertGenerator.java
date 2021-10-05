@@ -14,6 +14,7 @@ import sqlancer.hazelcast.HazelcastSchema.HazelcastTable;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sqlancer.Main.QueryManager.incrementInsertQueryTryout;
 import static sqlancer.hazelcast.gen.HazelcastCommon.fillKnownErrors;
 import static sqlancer.hazelcast.gen.HazelcastExpressionGenerator.*;
 
@@ -23,7 +24,7 @@ public final class HazelcastInsertGenerator {
     }
 
     public static SQLQueryAdapter insert(HazelcastGlobalState globalState) {
-        HazelcastTable table = globalState.getSchema().getRandomTable(HazelcastTable::isInsertable);
+        HazelcastTable table = globalState.getSchema(false).getRandomTable(HazelcastTable::isInsertable);
         ExpectedErrors errors = new ExpectedErrors();
         fillKnownErrors(errors);
 
@@ -66,6 +67,7 @@ public final class HazelcastInsertGenerator {
                 insertRow(globalState, sb, columns);
             }
         }
+        incrementInsertQueryTryout();
         return new SQLQueryAdapter(sb.toString(), errors);
     }
 
@@ -76,7 +78,7 @@ public final class HazelcastInsertGenerator {
                 sb.append(", ");
             }
             HazelcastExpression generateConstant;
-            if (Randomly.getBoolean()) {
+            if (columns.get(i).getName().equals("__key") || Randomly.getBoolean()) {
                 generateConstant = generateConstant(globalState.getRandomly(), columns.get(i).getType());
             } else {
                 generateConstant = new HazelcastExpressionGenerator(globalState)

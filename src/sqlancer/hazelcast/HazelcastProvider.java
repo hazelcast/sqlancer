@@ -76,8 +76,7 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
 
     @Override
     public void generateDatabase(HazelcastGlobalState globalState) throws Exception {
-//        readFunctions(globalState);
-        createTables(globalState, Randomly.fromOptions(4, 5, 6));
+        createTables(globalState, Randomly.fromOptions(20, 25, 30));
         prepareTables(globalState);
     }
 
@@ -99,10 +98,11 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
                 String tableName = DBMSCommon.createTableName(globalState.getSchema().getDatabaseTables().size());
                 SQLQueryAdapter createTable = HazelcastTableGenerator.generate(tableName, globalState.getSchema(),
                         generateOnlyKnown, globalState);
+                System.out.println(createTable.getQueryString());
                 HazelcastGlobalState.executeStatement(createTable.getQueryString(), expectedErrors);
                 globalState.getManager().incrementCreateQueryCount();
             } catch (IgnoreMeException e) {
-                System.err.println("UNEXPECTED IgnoreMeException DURING STATEMENT EXECUTION.");
+                System.err.println("UNEXPECTED IgnoreMeException DURING CREATE MAPPING STATEMENT EXECUTION.");
                 e.printStackTrace();
             }
         } while (globalState.getSchema().getDatabaseTables().size() < numTables);

@@ -9,6 +9,7 @@ import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.Query;
 import sqlancer.hazelcast.HazelcastGlobalState;
 
+import static sqlancer.hazelcast.ast.HazelcastConstants.usedKeyCache;
 import static sqlancer.hazelcast.gen.HazelcastCommon.findRootCause;
 
 public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends AbstractAction<G>> {
@@ -74,6 +75,7 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
                 do {
                     query = nextAction.getQuery(globalState);
                     try {
+                        // Was replaced with HazelcastGlobalState
                         HazelcastGlobalState.executeStatement(query.getQueryString(), query.getExpectedErrors());
                         success = true;
                     } catch (HazelcastSqlException e) {
@@ -88,6 +90,7 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
                 } while (nextAction.canBeRetried() && !success
                         && nrTries++ < globalState.getOptions().getNrStatementRetryCount());
             } catch (IgnoreMeException e) {
+                e.printStackTrace();
             }
             if (query != null && query.couldAffectSchema()) {
                 globalState.updateSchema();
@@ -95,5 +98,6 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
             }
             total--;
         }
+        usedKeyCache.clear();
     }
 }

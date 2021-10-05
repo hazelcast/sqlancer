@@ -13,6 +13,8 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static sqlancer.hazelcast.HazelcastGlobalState.executeStatementSilently;
@@ -22,8 +24,8 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     private final String databaseName;
 
     public enum HazelcastDataType {
-        TINYINT,
-        SMALLINT,
+        //        TINYINT,
+//        SMALLINT,
         INTEGER,
         BOOLEAN,
         VARCHAR,
@@ -34,8 +36,8 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
         public static HazelcastDataType getRandomType() {
             List<HazelcastDataType> dataTypes = new ArrayList<>(Arrays.asList(INTEGER, BOOLEAN, VARCHAR));
             if (HazelcastProvider.generateOnlyKnown) {
-                dataTypes.remove(HazelcastDataType.TINYINT);
-                dataTypes.remove(HazelcastDataType.SMALLINT);
+//                dataTypes.remove(HazelcastDataType.TINYINT);
+//                dataTypes.remove(HazelcastDataType.SMALLINT);
                 dataTypes.remove(HazelcastDataType.DECIMAL);
                 dataTypes.remove(HazelcastDataType.FLOAT);
                 dataTypes.remove(HazelcastDataType.DOUBLE);
@@ -61,13 +63,22 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
             super(tables);
         }
 
-        public HazelcastRowValue getRandomRowValue(SQLConnection con) {
-            Set<String> nonEmptyMaps = new HashSet<>();
+        @Override
+        public String tableNamesAsString() {
+            return getUsedTables().stream().map(AbstractTable::getName).collect(Collectors.joining(", "));
+        }
 
-            List<String> tableNames = getTables().stream().map(AbstractTable::getName).collect(toList());
+        @Override
+        public String columnNamesAsString(Function<HazelcastColumn, String> function) {
+            return getUsedColumns().stream().map(function).collect(Collectors.joining(", "));
+        }
+
+        public HazelcastRowValue getRandomRowValue(SQLConnection con) {
+            Set<HazelcastTable> nonEmptyMaps = new HashSet<>();
+
             try (Statement s = con.createStatement()) {
-                for (String table : tableNames) {
-                    String query = String.format("SELECT COUNT(*) FROM %s", table);
+                for (HazelcastTable table : getTables()) {
+                    String query = String.format("SELECT COUNT(*) FROM %s", table.getName());
 
                     ResultSet resultSet = s.executeQuery(query);
                     if (resultSet.next()) {
@@ -81,19 +92,17 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                 e.printStackTrace();
             }
 
-            assert !nonEmptyMaps.isEmpty() : "Non-empty maps should exists. Overall maps count : " + tableNames.size();
+            assert !nonEmptyMaps.isEmpty() : "Non-empty maps must exist. Overall maps count : " + getTables().size();
 
-            final String tableName = Randomly.fromList(new ArrayList<>(nonEmptyMaps));
-            List<HazelcastColumn> tableColumns = getColumns()
+            this.usedTables = new ArrayList<>(nonEmptyMaps);
+            this.usedColumns = getColumns()
                     .stream()
-                    .filter(c -> c.getTable().getName().equals(tableName))
+                    .filter(c -> nonEmptyMaps.contains(c.getTable()))
                     .collect(toList());
-            final HazelcastTable usedTable = tableColumns.get(0).getTable();
 
             String randomRow = String.format("SELECT %s FROM %s ORDER BY RAND() LIMIT 1", columnNamesAsString(
-                            c -> c.getTable().getName() + "." + c.getName() + " AS " + c.getTable().getName() + c.getName(),
-                            tableName),
-                    tableName);
+                            c -> c.getTable().getName() + "." + c.getName() + " AS " + c.getTable().getName() + c.getName()),
+                    tableNamesAsString());
 
             Map<HazelcastColumn, HazelcastConstant> values = new HashMap<>();
             try (Statement s = con.createStatement()) {
@@ -101,8 +110,8 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                 if (!randomRowValues.next()) {
                     throw new AssertionError("could not find random row! " + randomRow + "\n");
                 }
-                for (int i = 0; i < tableColumns.size(); i++) {
-                    HazelcastColumn column = tableColumns.get(i);
+                for (int i = 0; i < getUsedColumns().size(); i++) {
+                    HazelcastColumn column = getUsedColumns().get(i);
                     String columnName = column.getTable().getName() + column.getName();
                     int columnIndex = randomRowValues.findColumn(columnName) + 1;
                     assert columnIndex == i + 1;
@@ -133,9 +142,8 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                     values.put(column, constant);
                 }
                 if (randomRowValues.next()) throw new AssertionError();
-                return new HazelcastRowValue(this, usedTable, values);
+                return new HazelcastRowValue(this, values);
             } catch (SQLException e) {
-                System.err.println("===============>");
                 e.printStackTrace();
                 throw new IgnoreMeException();
             }
@@ -146,9 +154,9 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     public static HazelcastDataType getColumnType(String typeString) {
         switch (typeString.toLowerCase()) {
             case "tinyint":
-                return HazelcastDataType.TINYINT;
+//                return HazelcastDataType.TINYINT;
             case "smallint":
-                return HazelcastDataType.SMALLINT;
+//                return HazelcastDataType.SMALLINT;
             case "integer":
             case "bigint": // TODO: support it as a separate type
                 return HazelcastDataType.INTEGER;
@@ -166,15 +174,55 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     }
 
     public static class HazelcastRowValue extends AbstractRowValue<HazelcastTables, HazelcastColumn, HazelcastConstant> {
-        private HazelcastTable usedTable;
-
-        protected HazelcastRowValue(HazelcastTables tables, HazelcastTable usedTable, Map<HazelcastColumn, HazelcastConstant> values) {
+        protected HazelcastRowValue(HazelcastTables tables, Map<HazelcastColumn, HazelcastConstant> values) {
             super(tables, values);
-            this.usedTable = usedTable;
         }
 
-        public HazelcastTable getUsedTable() {
-            return usedTable;
+        @Override
+        public String getRowValuesAsString() {
+            List<HazelcastColumn> columnsToCheck = getTable().getColumns();
+            return getRowValuesAsString(columnsToCheck);
+        }
+
+        @Override
+        public String getRowValuesAsString(List<HazelcastColumn> columnsToCheck) {
+            StringBuilder sb = new StringBuilder();
+            Map<HazelcastColumn, HazelcastConstant> expectedValues = getValues();
+            for (int i = 0; i < columnsToCheck.size(); i++) {
+                if (i != 0) {
+                    sb.append(", ");
+                }
+                HazelcastConstant expectedColumnValue = expectedValues.get(columnsToCheck.get(i));
+                sb.append(expectedColumnValue);
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public String asStringGroupedByTables() {
+            StringBuilder sb = new StringBuilder();
+            List<HazelcastColumn> columnList = new ArrayList<>(getValues().keySet());
+            List<AbstractTable<?, ?, ?>> tableList = columnList.stream().map(AbstractTableColumn::getTable).distinct().sorted()
+                    .collect(Collectors.toList());
+            for (int j = 0; j < tableList.size(); j++) {
+                if (j != 0) {
+                    sb.append("\n");
+                }
+                AbstractTable<?, ?, ?> t = tableList.get(j);
+                sb.append("-- ").append(t.getName()).append("\n");
+                List<HazelcastColumn> columnsForTable = columnList.stream().filter(c -> c.getTable().equals(t))
+                        .collect(Collectors.toList());
+                for (int i = 0; i < columnsForTable.size(); i++) {
+                    if (i != 0) {
+                        sb.append("\n");
+                    }
+                    sb.append("--\t");
+                    sb.append(columnsForTable.get(i));
+                    sb.append("=");
+                    sb.append(getValues().get(columnsForTable.get(i)));
+                }
+            }
+            return sb.toString();
         }
     }
 
@@ -240,6 +288,9 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
             return new HazelcastSchema(databaseTables, databaseName);
         } catch (SQLIntegrityConstraintViolationException e) {
             throw new AssertionError(e);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -273,5 +324,4 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
     public String getDatabaseName() {
         return databaseName;
     }
-
 }

@@ -75,7 +75,7 @@ public class HazelcastTableGenerator {
     private void addOptions() {
         //TODO: Add options for other TYPEs
         sb.append("OPTIONS ( " +
-                "'keyFormat'='int', " +
+                "'keyFormat'='bigint', " +
                 "'valueFormat'='json-flat')");
     }
 
