@@ -27,7 +27,7 @@ public class HazelcastOptions implements DBMSSpecificOptions<HazelcastOptions.Ha
     public boolean allowBulkInsert;
 
     @Parameter(names = "--oracle", description = "Specifies which test oracle should be used for Hazelcast SQL")
-    public List<HazelcastOracleFactory> oracle = singletonList(HazelcastOracleFactory.PQS);
+    public List<HazelcastOracleFactory> oracle = singletonList(HazelcastOracleFactory.WHERE);
 
     @Parameter(names = "--test-collations", description = "Specifies whether to test different collations", arity = 1)
     public boolean testCollations = true;
@@ -58,6 +58,13 @@ public class HazelcastOptions implements DBMSSpecificOptions<HazelcastOptions.Ha
             @Override
             public TestOracle create(HazelcastGlobalState globalState) throws SQLException {
                 return new HazelcastTLPHavingOracle(globalState);
+            }
+
+        },
+        WHERE {
+            @Override
+            public TestOracle create(HazelcastGlobalState globalState) throws SQLException {
+                return new HazelcastTLPWhereOracle(globalState);
             }
 
         },

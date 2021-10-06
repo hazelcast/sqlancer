@@ -22,7 +22,7 @@ public class TestHazelcast {
     }
 
     @Test
-    public void testHazelcast() {
+    public void testHazelcastPQS() {
         assumeTrue(hazelcastIsAvailable);
         assertEquals(0,
                 Main.executeMain(
@@ -31,6 +31,21 @@ public class TestHazelcast {
                         "--num-threads", "4",
                         "--num-queries", TestConfig.NUM_QUERIES,
                         "hazelcast", " --oracle", "PQS",
+                        "--test-collations", "false")
+        );
+
+    }
+
+    @Test
+    public void testHazelcastTLP() {
+        assumeTrue(hazelcastIsAvailable);
+        assertEquals(0,
+                Main.executeMain(
+                        "--random-seed", String.valueOf(ThreadLocalRandom.current().nextLong()),
+                        "--timeout-seconds", TestConfig.SECONDS,
+                        "--num-threads", "4",
+                        "--num-queries", TestConfig.NUM_QUERIES,
+                        "hazelcast", " --oracle", "WHERE",
                         "--test-collations", "false")
         );
 

@@ -94,7 +94,6 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
         SqlResult result = null;
         try {
             result = getHazelcast().getSql().execute(query);
-            System.out.println(query);
         } catch (Throwable e) {
             Throwable rootCause = findRootCause(e);
             if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {

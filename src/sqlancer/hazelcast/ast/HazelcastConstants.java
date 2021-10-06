@@ -636,9 +636,12 @@ public abstract class HazelcastConstants {
 
     public static HazelcastConstant createLongConstant(long val) {
         long nextInt = val;
+        if (usedKeyCache.size() > 100) {
+            usedKeyCache.clear();
+        }
         // To reduce count of duplicated keys and to enhance entropy, we will use keys cache :)
         while (usedKeyCache.contains(nextInt)) {
-            long next = (int) Randomly.getNotCachedInteger(0, (Integer.MAX_VALUE));
+            long next = ThreadLocalRandom.current().nextLong(Integer.MAX_VALUE);
             nextInt = next;
         }
         usedKeyCache.add(nextInt);
