@@ -9,7 +9,7 @@ import sqlancer.common.query.ExpectedErrors;
 public abstract class NoRECBase<S extends SQLGlobalState<?, ?>> implements TestOracle {
 
     protected final S state;
-    protected final ExpectedErrors errors = new ExpectedErrors();
+    protected ExpectedErrors errors = new ExpectedErrors();
     protected final StateLogger logger;
     protected final MainOptions options;
     protected final SQLConnection con;

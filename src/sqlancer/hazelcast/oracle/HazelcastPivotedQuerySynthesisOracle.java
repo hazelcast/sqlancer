@@ -27,8 +27,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     public HazelcastPivotedQuerySynthesisOracle(HazelcastGlobalState globalState) throws SQLException {
         super(globalState);
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        HazelcastCommon.addCommonFetchErrors(errors);
+        this.errors = HazelcastCommon.knownErrors;
     }
 
     @Override

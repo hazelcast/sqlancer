@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sqlancer.Main.QueryManager.incrementInsertQueryTryout;
-import static sqlancer.hazelcast.gen.HazelcastCommon.fillKnownErrors;
 import static sqlancer.hazelcast.gen.HazelcastExpressionGenerator.*;
 
 public final class HazelcastInsertGenerator {
@@ -25,8 +24,6 @@ public final class HazelcastInsertGenerator {
 
     public static SQLQueryAdapter insert(HazelcastGlobalState globalState) {
         HazelcastTable table = globalState.getSchema(false).getRandomTable(HazelcastTable::isInsertable);
-        ExpectedErrors errors = new ExpectedErrors();
-        fillKnownErrors(errors);
 
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO ");
@@ -68,7 +65,7 @@ public final class HazelcastInsertGenerator {
             }
         }
         incrementInsertQueryTryout();
-        return new SQLQueryAdapter(sb.toString(), errors);
+        return new SQLQueryAdapter(sb.toString(), HazelcastCommon.knownErrors);
     }
 
     private static void insertRow(HazelcastGlobalState globalState, StringBuilder sb, List<HazelcastColumn> columns) {

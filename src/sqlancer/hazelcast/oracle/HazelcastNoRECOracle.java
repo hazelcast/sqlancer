@@ -38,8 +38,7 @@ public class HazelcastNoRECOracle extends NoRECBase<HazelcastGlobalState> implem
     public HazelcastNoRECOracle(HazelcastGlobalState globalState) {
         super(globalState);
         this.s = globalState.getSchema();
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        HazelcastCommon.addCommonFetchErrors(errors);
+        this.errors = HazelcastCommon.knownErrors;
     }
 
     @Override

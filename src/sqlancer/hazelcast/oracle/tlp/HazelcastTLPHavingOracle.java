@@ -16,7 +16,6 @@ public class HazelcastTLPHavingOracle extends HazelcastTLPBase {
 
     public HazelcastTLPHavingOracle(HazelcastGlobalState state) {
         super(state);
-        HazelcastCommon.addGroupingErrors(errors);
     }
 
     @Override

@@ -7,6 +7,7 @@ import sqlancer.Randomly;
 import sqlancer.SQLConnection;
 import sqlancer.SQLGlobalState;
 import sqlancer.common.query.ExpectedErrors;
+import sqlancer.hazelcast.gen.HazelcastCommon;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -90,13 +91,13 @@ public class HazelcastGlobalState extends SQLGlobalState<HazelcastOptions, Hazel
         return this.functionsAndTypes;
     }
 
-    public static SqlResult executeStatement(String query, ExpectedErrors expectedErrors) {
+    public static SqlResult executeStatement(String query) {
         SqlResult result = null;
         try {
             result = getHazelcast().getSql().execute(query);
         } catch (Throwable e) {
             Throwable rootCause = findRootCause(e);
-            if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {
+            if (!HazelcastCommon.knownErrors.errorIsExpected(rootCause.getMessage())) {
                 System.err.println("UNEXPECTED EXCEPTION DURING STATEMENT EXECUTION.");
                 System.err.println(query);
                 e.printStackTrace();

@@ -22,7 +22,7 @@ public class HazelcastTableGenerator {
     private final StringBuilder sb = new StringBuilder();
     private final HazelcastSchema newSchema;
     private final List<HazelcastColumn> columnsToBeAdded = new ArrayList<>();
-    protected final ExpectedErrors errors = new ExpectedErrors();
+    protected final ExpectedErrors errors = HazelcastCommon.knownErrors;
     private final HazelcastTable table;
     private final boolean generateOnlyKnown;
     private final HazelcastGlobalState globalState;
@@ -34,12 +34,6 @@ public class HazelcastTableGenerator {
         this.generateOnlyKnown = generateOnlyKnown;
         this.globalState = globalState;
         table = new HazelcastTable(tableName, columnsToBeAdded, null, false);
-        errors.add("Division by zero");
-        errors.add("BIGINT overflow");
-        errors.add("Duplicate key");
-        errors.add("CAST function cannot convert value of type INTEGER to type BOOLEAN");
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        HazelcastCommon.addCommonTableErrors(errors);
     }
 
     public static SQLQueryAdapter generate(String tableName, HazelcastSchema newSchema, boolean generateOnlyKnown,

@@ -91,15 +91,13 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
     }
 
     protected void createTables(HazelcastGlobalState globalState, int numTables) throws Exception {
-        ExpectedErrors expectedErrors = new ExpectedErrors();
-        HazelcastCommon.fillKnownErrors(expectedErrors);
         do {
             try {
                 String tableName = DBMSCommon.createTableName(globalState.getSchema().getDatabaseTables().size());
                 SQLQueryAdapter createTable = HazelcastTableGenerator.generate(tableName, globalState.getSchema(),
                         generateOnlyKnown, globalState);
                 System.out.println(createTable.getQueryString());
-                HazelcastGlobalState.executeStatement(createTable.getQueryString(), expectedErrors);
+                HazelcastGlobalState.executeStatement(createTable.getQueryString());
                 globalState.getManager().incrementCreateQueryCount();
             } catch (IgnoreMeException e) {
                 System.err.println("UNEXPECTED IgnoreMeException DURING CREATE MAPPING STATEMENT EXECUTION.");

@@ -21,7 +21,7 @@ public abstract class TernaryLogicPartitioningOracleBase<E, S extends SQLGlobalS
     protected E isNullPredicate;
 
     protected final S state;
-    protected final ExpectedErrors errors = new ExpectedErrors();
+    protected ExpectedErrors errors = new ExpectedErrors();
 
     protected TernaryLogicPartitioningOracleBase(S state) {
         this.state = state;

@@ -14,7 +14,7 @@ import sqlancer.common.schema.AbstractRowValue;
 public abstract class PivotedQuerySynthesisBase<S extends GlobalState<?, ?, C>, R extends AbstractRowValue<?, ?, ?>, E, C extends SQLancerDBConnection>
         implements TestOracle {
 
-    protected final ExpectedErrors errors = new ExpectedErrors();
+    protected ExpectedErrors errors = new ExpectedErrors();
 
     /**
      * The predicates used in WHERE and JOIN clauses, which yield TRUE for the pivot row.

@@ -9,12 +9,24 @@ import java.util.List;
 
 public final class HazelcastCommon {
 
+    public static ExpectedErrors knownErrors;
+
+    static {
+        knownErrors = new ExpectedErrors();
+        fillKnownErrors(knownErrors);
+        addCommonFetchErrors(knownErrors);
+        addCommonExpressionErrors(knownErrors);
+        addCommonMathExpressionErrors(knownErrors);
+        addGroupingErrors(knownErrors);
+    }
+
     private HazelcastCommon() {
     }
 
-    public static void fillKnownErrors(ExpectedErrors errors) {
+    private static void fillKnownErrors(ExpectedErrors errors) {
         errors.add("Duplicate key");
         errors.add("/ by zero");
+        errors.add("Division by zero");
         errors.add("CAST function cannot convert value");
         errors.add("Cannot parse VARCHAR");
         errors.add("SUBSTRING \"start\" operand must be positive");
@@ -22,14 +34,11 @@ public final class HazelcastCommon {
         HazelcastCommon.addCommonMathExpressionErrors(errors);
     }
 
-    public static void addCommonFetchErrors(ExpectedErrors errors) {
+    private static void addCommonFetchErrors(ExpectedErrors errors) {
         errors.add("GROUP BY position");
     }
 
-    public static void addCommonTableErrors(ExpectedErrors errors) {
-    }
-
-    public static void addCommonExpressionErrors(ExpectedErrors errors) {
+    private static void addCommonExpressionErrors(ExpectedErrors errors) {
         errors.add("Duplicate key");
         errors.add("CAST function cannot convert value of type BIGINT to type BOOLEAN");
         errors.add("Cannot parse VARCHAR to");
@@ -37,12 +46,20 @@ public final class HazelcastCommon {
     }
 
 
-    public static void addCommonMathExpressionErrors(ExpectedErrors errors) {
+    private static void addCommonMathExpressionErrors(ExpectedErrors errors) {
         errors.add("Numeric overflow while converting");
+        errors.add("BIGINT overflow");
         errors.add("overflow in '*' operator");
         errors.add("overflow in '+' operator");
         errors.add("Division by zero");
         errors.add("/ by zero");
+    }
+
+    private static void addGroupingErrors(ExpectedErrors errors) {
+        errors.add("non-integer constant in GROUP BY"); // TODO
+        errors.add("must appear in the GROUP BY clause or be used in an aggregate function");
+        errors.add("is not in select list");
+        errors.add("aggregate functions are not allowed in GROUP BY");
     }
 
     public static boolean appendDataType(HazelcastDataType type, StringBuilder sb, boolean allowSerial,
@@ -71,14 +88,6 @@ public final class HazelcastCommon {
         }
         return serial;
     }
-
-    public static void addGroupingErrors(ExpectedErrors errors) {
-        errors.add("non-integer constant in GROUP BY"); // TODO
-        errors.add("must appear in the GROUP BY clause or be used in an aggregate function");
-        errors.add("is not in select list");
-        errors.add("aggregate functions are not allowed in GROUP BY");
-    }
-
     public static Throwable findRootCause(Throwable e) {
         while (e.getCause() != null) {
             if (e instanceof QueryException) {

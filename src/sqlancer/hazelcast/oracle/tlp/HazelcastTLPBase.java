@@ -34,8 +34,7 @@ public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<Hazelca
 
     public HazelcastTLPBase(HazelcastGlobalState state) {
         super(state);
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        HazelcastCommon.addCommonFetchErrors(errors);
+        this.errors = HazelcastCommon.knownErrors;
     }
 
     @Override

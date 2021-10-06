@@ -76,7 +76,7 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
                     query = nextAction.getQuery(globalState);
                     try {
                         // Was replaced with HazelcastGlobalState
-                        HazelcastGlobalState.executeStatement(query.getQueryString(), query.getExpectedErrors());
+                        HazelcastGlobalState.executeStatement(query.getQueryString());
                         success = true;
                     } catch (HazelcastSqlException e) {
                         System.out.println("Problems in query : " + query.getQueryString());

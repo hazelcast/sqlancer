@@ -15,10 +15,7 @@ public final class HazelcastDeleteGenerator {
 
     public static SQLQueryAdapter create(HazelcastGlobalState globalState) {
         HazelcastTable table = globalState.getSchema().getRandomTable(t -> !t.isView());
-        ExpectedErrors errors = new ExpectedErrors();
-        errors.add("violates foreign key constraint");
-        errors.add("violates not-null constraint");
-        errors.add("could not determine which collation to use for string comparison");
+
         StringBuilder sb = new StringBuilder("DELETE FROM");
         sb.append(" ");
         sb.append(table.getName());
@@ -27,12 +24,7 @@ public final class HazelcastDeleteGenerator {
             sb.append(HazelcastVisitor.asString(HazelcastExpressionGenerator.generateExpression(globalState,
                     table.getColumns(), HazelcastDataType.BOOLEAN)));
         }
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        errors.add("out of range");
-        errors.add("cannot cast");
-        errors.add("invalid input syntax for");
-        errors.add("division by zero");
-        return new SQLQueryAdapter(sb.toString(), errors);
+        return new SQLQueryAdapter(sb.toString(), HazelcastCommon.knownErrors);
     }
 
 }

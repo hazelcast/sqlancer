@@ -26,21 +26,12 @@ public final class HazelcastUpdateGenerator {
         sb.append("UPDATE ");
         sb.append(randomTable.getName());
         sb.append(" SET ");
-        ExpectedErrors errors = ExpectedErrors.from("conflicting key value violates exclusion constraint",
-                "reached maximum value of sequence", "violates foreign key constraint", "violates not-null constraint",
-                "violates unique constraint", "out of range", "cannot cast", "must be type boolean", "is not unique",
-                " bit string too long", "can only be updated to DEFAULT", "division by zero",
-                "You might need to add explicit type casts.", "invalid regular expression",
-                "View columns that are not columns of their base relation are not updatable");
-        errors.add("multiple assignments to same column"); // view whose columns refer to a column in the referenced
-        // table multiple times
-        errors.add("new row violates check option for view");
         final String keyColumn = "__key";   // __key column cannot be updated
         List<HazelcastColumn> columns = randomTable.getRandomNonEmptyColumnSubset().stream()
                 .filter(column -> !column.getName().equals(keyColumn)).collect(Collectors.toList());
         //Skip running UPDATE query if table has only __key column
         if (columns.size() < 1) {
-            return new SQLQueryAdapter("", errors, false);
+            return new SQLQueryAdapter("", HazelcastCommon.knownErrors, false);
         }
 
         for (int i = 0; i < columns.size(); i++) {
@@ -53,12 +44,6 @@ public final class HazelcastUpdateGenerator {
             HazelcastExpression constant = generateConstant(globalState.getRandomly(), column.getType());
             sb.append(HazelcastVisitor.asString(constant));
         }
-        errors.add("invalid input syntax for ");
-        errors.add("operator does not exist: text = boolean");
-        errors.add("violates check constraint");
-        errors.add("could not determine which collation to use for string comparison");
-        errors.add("but expression is of type");
-        HazelcastCommon.addCommonExpressionErrors(errors);
         if (!Randomly.getBooleanWithSmallProbability()) {
             sb.append(" WHERE ");
             HazelcastExpression where = generateExpression(globalState,
@@ -66,7 +51,7 @@ public final class HazelcastUpdateGenerator {
             sb.append(HazelcastVisitor.asString(where));
         }
 
-        return new SQLQueryAdapter(sb.toString(), errors, true);
+        return new SQLQueryAdapter(sb.toString(), HazelcastCommon.knownErrors, true);
     }
 
 }
