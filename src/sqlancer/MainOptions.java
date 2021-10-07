@@ -25,7 +25,7 @@ public class MainOptions {
     private int totalNumberTries = 10; // NOPMD
 
     @Parameter(names = {"--max-num-inserts"}, description = "Specifies how many INSERT statements should be issued")
-    private int maxNumberInserts = 100; // NOPMD
+    private int maxNumberInserts = 1000; // NOPMD
 
     @Parameter(names = {"--max-num-updates"}, description = "Specifies how many UPDATE/DELETE statements should be issued")
     private int maxNumberUpdates = 1; // NOPMD

@@ -15,25 +15,6 @@ public class HazelcastBinaryComparisonOperation extends BinaryOperatorNode<Hazel
                 return leftVal.isEquals(rightVal);
             }
         },
-        IS_DISTINCT("IS DISTINCT FROM") {
-            @Override
-            public HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal) {
-                return HazelcastConstants
-                        .createBooleanConstant(!IS_NOT_DISTINCT.getExpectedValue(leftVal, rightVal).asBoolean());
-            }
-        },
-        IS_NOT_DISTINCT("IS NOT DISTINCT FROM") {
-            @Override
-            public HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal) {
-                if (leftVal.isNull()) {
-                    return HazelcastConstants.createBooleanConstant(rightVal.isNull());
-                } else if (rightVal.isNull()) {
-                    return HazelcastConstants.createFalse();
-                } else {
-                    return leftVal.isEquals(rightVal);
-                }
-            }
-        },
         NOT_EQUALS("!=") {
             @Override
             public HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal) {

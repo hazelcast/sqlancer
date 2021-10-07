@@ -11,6 +11,7 @@ import sqlancer.hazelcast.HazelcastSchema.HazelcastTable;
 public final class HazelcastDeleteGenerator {
 
     private HazelcastDeleteGenerator() {
+
     }
 
     public static SQLQueryAdapter create(HazelcastGlobalState globalState) {

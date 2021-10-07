@@ -94,10 +94,10 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
 
             assert !nonEmptyMaps.isEmpty() : "Non-empty maps must exist. Overall maps count : " + getTables().size();
 
-            this.usedTables = new ArrayList<>(nonEmptyMaps);
+            this.usedTables = Randomly.nonEmptySubset(new ArrayList<>(nonEmptyMaps), 1);
             this.usedColumns = getColumns()
                     .stream()
-                    .filter(c -> nonEmptyMaps.contains(c.getTable()))
+                    .filter(c -> c.getTable().equals(usedTables.get(0)))
                     .collect(toList());
 
             String randomRow = String.format("SELECT %s FROM %s ORDER BY RAND() LIMIT 1", columnNamesAsString(
@@ -110,8 +110,9 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                 if (!randomRowValues.next()) {
                     throw new AssertionError("could not find random row! " + randomRow + "\n");
                 }
-                for (int i = 0; i < getUsedColumns().size(); i++) {
-                    HazelcastColumn column = getUsedColumns().get(i);
+                List<HazelcastColumn> usedColumns = getUsedColumns();
+                for (int i = 0; i < usedColumns.size(); i++) {
+                    HazelcastColumn column = usedColumns.get(i);
                     String columnName = column.getTable().getName() + column.getName();
                     int columnIndex = randomRowValues.findColumn(columnName) + 1;
                     assert columnIndex == i + 1;
@@ -141,7 +142,9 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
                     }
                     values.put(column, constant);
                 }
-                if (randomRowValues.next()) throw new AssertionError();
+                if (randomRowValues.next()) {
+                    throw new AssertionError();
+                }
                 return new HazelcastRowValue(this, values);
             } catch (SQLException e) {
                 e.printStackTrace();

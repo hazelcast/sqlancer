@@ -76,7 +76,7 @@ public class HazelcastProvider extends SQLProviderAdapter<HazelcastGlobalState, 
 
     @Override
     public void generateDatabase(HazelcastGlobalState globalState) throws Exception {
-        createTables(globalState, Randomly.fromOptions(20, 25, 30));
+        createTables(globalState, Randomly.fromOptions(10, 12, 14));
         prepareTables(globalState);
     }
 

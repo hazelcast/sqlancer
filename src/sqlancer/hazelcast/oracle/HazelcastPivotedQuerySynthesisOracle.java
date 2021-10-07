@@ -38,8 +38,9 @@ public class HazelcastPivotedQuerySynthesisOracle
         selectStatement.setSelectType(Randomly.fromOptions(HazelcastSelect.SelectType.values()));
         pivotRow = randomFromTables.getRandomRowValue(globalState.getConnection());
 
-        List<HazelcastColumn> fetchColumns = randomFromTables.getColumns();
-        selectStatement.setFromList(randomFromTables.getTables().stream().map(t -> new HazelcastFromTable(t, true))
+        List<HazelcastColumn> fetchColumns = pivotRow.getTable().getUsedColumns();
+        selectStatement.setFromList(pivotRow.getTable().getUsedTables()
+                .stream().map(t -> new HazelcastFromTable(t, true))
                 .collect(Collectors.toList()));
         selectStatement.setFetchColumns(fetchColumns.stream()
                 .map(c -> new HazelcastColumnValue(getFetchValueAliasedColumn(c), pivotRow.getValues().get(c)))
@@ -58,8 +59,7 @@ public class HazelcastPivotedQuerySynthesisOracle
                 .generateOrderBy();
         selectStatement.setOrderByExpressions(orderBy);
         String selectQuery = HazelcastVisitor.asString(selectStatement);
-        System.out.println(">> " + selectQuery);
-        return new SQLQueryAdapter(selectQuery);
+        return new SQLQueryAdapter(selectQuery, HazelcastCommon.knownErrors);
     }
 
     /*
@@ -83,7 +83,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     private HazelcastConstant generateLimit() {
         if (Randomly.getBoolean()) {
-            return HazelcastConstants.createLongConstant(Integer.MAX_VALUE);
+            return HazelcastConstants.createLongConstant((int) Short.MAX_VALUE);
         } else {
             return null;
         }

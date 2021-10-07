@@ -332,6 +332,11 @@ public abstract class HazelcastConstants {
         }
 
         @Override
+        public boolean asBoolean() {
+            return val != 0;
+        }
+
+        @Override
         public HazelcastConstant isEquals(HazelcastConstant rightVal) {
             if (rightVal.isNull()) {
                 return HazelcastConstants.createNullConstant();
@@ -636,7 +641,7 @@ public abstract class HazelcastConstants {
 
     public static HazelcastConstant createLongConstant(long val) {
         long nextInt = val;
-        if (usedKeyCache.size() > 100) {
+        if (usedKeyCache.size() > 10000) {
             usedKeyCache.clear();
         }
         // To reduce count of duplicated keys and to enhance entropy, we will use keys cache :)
