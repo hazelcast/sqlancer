@@ -45,6 +45,7 @@ public class TestHazelcast {
                         "--timeout-seconds", TestConfig.SECONDS,
                         "--num-threads", "4",
                         "--num-queries", TestConfig.NUM_QUERIES,
+                        "--max-num-inserts", "200",
                         "hazelcast", " --oracle", "WHERE",
                         "--test-collations", "false")
         );

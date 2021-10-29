@@ -30,7 +30,7 @@ public abstract class HazelcastConstant implements HazelcastExpression {
     }
 
     public boolean asBoolean() {
-        throw new UnsupportedOperationException(this.toString());
+        throw new UnsupportedOperationException(this.toString() + " " + this.getClass().getName());
     }
 
     public long asInt() {

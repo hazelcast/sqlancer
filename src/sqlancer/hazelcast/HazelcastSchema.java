@@ -324,6 +324,10 @@ public class HazelcastSchema extends AbstractSchema<HazelcastGlobalState, Hazelc
         return new HazelcastTables(Randomly.nonEmptySubset(getDatabaseTables()));
     }
 
+    public HazelcastTables getRandomTableNonEmptyTable() {
+        return new HazelcastTables(Randomly.nonEmptySubset(getDatabaseTables(), 1));
+    }
+
     public String getDatabaseName() {
         return databaseName;
     }

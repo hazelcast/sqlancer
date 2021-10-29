@@ -40,16 +40,9 @@ public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<Hazelca
     @Override
     public void check() throws SQLException {
         s = state.getSchema();
-        targetTables = s.getRandomTableNonEmptyTables();
+        targetTables = s.getRandomTableNonEmptyTable();
         List<HazelcastTable> tables = targetTables.getTables();
-//        List<HazelcastJoin> joins = getJoinStatements(state, targetTables.getColumns(), tables);
         generateSelectBase(tables, null);
-    }
-
-    protected List<HazelcastJoin> getJoinStatements(HazelcastGlobalState globalState, List<HazelcastColumn> columns,
-                                                    List<HazelcastTable> tables) {
-        // TODO joins
-        return HazelcastNoRECOracle.getJoinStatements(state, columns, tables);
     }
 
     protected void generateSelectBase(List<HazelcastTable> tables, List<HazelcastJoin> joins) {
@@ -61,7 +54,6 @@ public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<Hazelca
         select.setFetchColumns(generateFetchColumns());
         select.setFromList(tableList);
         select.setWhereClause(null);
-//        select.setJoinClauses(joins);
         if (Randomly.getBoolean()) {
             select.setForClause(ForClause.getRandom());
         }

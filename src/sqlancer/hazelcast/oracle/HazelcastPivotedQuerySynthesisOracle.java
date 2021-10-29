@@ -101,12 +101,18 @@ public class HazelcastPivotedQuerySynthesisOracle
         HazelcastExpression expr = new HazelcastExpressionGenerator(globalState).setColumns(columns).setRowValue(rw)
                 .generateExpressionWithExpectedResult(HazelcastDataType.BOOLEAN);
         HazelcastExpression result;
-        if (expr.getExpectedValue().isNull()) {
+        if (expr.getExpectedValue() instanceof HazelcastConstants.HzNullConstant) {
             result = HazelcastPostfixOperation.create(expr, PostfixOperator.IS_NULL);
         } else {
-            result = HazelcastPostfixOperation.create(expr,
-                    expr.getExpectedValue().cast(HazelcastDataType.BOOLEAN).asBoolean() ? PostfixOperator.IS_TRUE
-                            : PostfixOperator.IS_FALSE);
+            PostfixOperator operator;
+            try {
+                operator = expr.getExpectedValue().cast(HazelcastDataType.BOOLEAN).asBoolean()
+                        ? PostfixOperator.IS_TRUE
+                        : PostfixOperator.IS_FALSE;
+            } catch (UnsupportedOperationException e) {
+                operator = PostfixOperator.IS_NULL;
+            }
+            result = HazelcastPostfixOperation.create(expr, operator);
         }
         rectifiedPredicates.add(result);
         return result;
