@@ -8,7 +8,8 @@ public final class HazelcastInstanceManager {
 
     public static volatile HazelcastInstance HAZELCAST_INSTANCE;
 
-    private HazelcastInstanceManager() {}
+    private HazelcastInstanceManager() {
+    }
 
     public static HazelcastInstance getInstance() {
         if (HAZELCAST_INSTANCE == null) {

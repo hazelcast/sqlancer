@@ -15,31 +15,12 @@ public class HazelcastBinaryComparisonOperation extends BinaryOperatorNode<Hazel
                 return leftVal.isEquals(rightVal);
             }
         },
-        IS_DISTINCT("IS DISTINCT FROM") {
-            @Override
-            public HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal) {
-                return HazelcastConstant
-                        .createBooleanConstant(!IS_NOT_DISTINCT.getExpectedValue(leftVal, rightVal).asBoolean());
-            }
-        },
-        IS_NOT_DISTINCT("IS NOT DISTINCT FROM") {
-            @Override
-            public HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal) {
-                if (leftVal.isNull()) {
-                    return HazelcastConstant.createBooleanConstant(rightVal.isNull());
-                } else if (rightVal.isNull()) {
-                    return HazelcastConstant.createFalse();
-                } else {
-                    return leftVal.isEquals(rightVal);
-                }
-            }
-        },
         NOT_EQUALS("!=") {
             @Override
             public HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal) {
                 HazelcastConstant isEquals = leftVal.isEquals(rightVal);
                 if (isEquals.isBoolean()) {
-                    return HazelcastConstant.createBooleanConstant(!isEquals.asBoolean());
+                    return HazelcastConstants.createBooleanConstant(!isEquals.asBoolean());
                 }
                 return isEquals;
             }
@@ -68,11 +49,11 @@ public class HazelcastBinaryComparisonOperation extends BinaryOperatorNode<Hazel
             public HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal) {
                 HazelcastConstant equals = leftVal.isEquals(rightVal);
                 if (equals.isBoolean() && equals.asBoolean()) {
-                    return HazelcastConstant.createFalse();
+                    return HazelcastConstants.createFalse();
                 } else {
                     HazelcastConstant applyLess = leftVal.isLessThan(rightVal);
                     if (applyLess.isNull()) {
-                        return HazelcastConstant.createNullConstant();
+                        return HazelcastConstants.createNullConstant();
                     }
                     return HazelcastPrefixOperation.PrefixOperator.NOT.getExpectedValue(applyLess);
                 }
@@ -84,11 +65,11 @@ public class HazelcastBinaryComparisonOperation extends BinaryOperatorNode<Hazel
             public HazelcastConstant getExpectedValue(HazelcastConstant leftVal, HazelcastConstant rightVal) {
                 HazelcastConstant equals = leftVal.isEquals(rightVal);
                 if (equals.isBoolean() && equals.asBoolean()) {
-                    return HazelcastConstant.createTrue();
+                    return HazelcastConstants.createTrue();
                 } else {
                     HazelcastConstant applyLess = leftVal.isLessThan(rightVal);
                     if (applyLess.isNull()) {
-                        return HazelcastConstant.createNullConstant();
+                        return HazelcastConstants.createNullConstant();
                     }
                     return HazelcastPrefixOperation.PrefixOperator.NOT.getExpectedValue(applyLess);
                 }

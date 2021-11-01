@@ -4,8 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
+import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.Query;
 import sqlancer.hazelcast.HazelcastGlobalState;
+
+import static sqlancer.hazelcast.ast.HazelcastConstants.usedKeyCache;
+import static sqlancer.hazelcast.gen.HazelcastCommon.findRootCause;
 
 public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends AbstractAction<G>> {
 
@@ -70,16 +75,22 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
                 do {
                     query = nextAction.getQuery(globalState);
                     try {
+                        // Was replaced with HazelcastGlobalState
                         HazelcastGlobalState.executeStatement(query.getQueryString());
                         success = true;
                     } catch (HazelcastSqlException e) {
+                        System.out.println("Problems in query : " + query.getQueryString());
                         success = false;
-                        e.printStackTrace();
+                        ExpectedErrors expectedErrors = query.getExpectedErrors();
+                        Throwable rootCause = findRootCause(e);
+                        if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {
+                            e.printStackTrace();
+                        }
                     }
                 } while (nextAction.canBeRetried() && !success
                         && nrTries++ < globalState.getOptions().getNrStatementRetryCount());
             } catch (IgnoreMeException e) {
-
+                e.printStackTrace();
             }
             if (query != null && query.couldAffectSchema()) {
                 globalState.updateSchema();
@@ -87,5 +98,6 @@ public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends Abstrac
             }
             total--;
         }
+        usedKeyCache.clear();
     }
 }

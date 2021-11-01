@@ -146,19 +146,15 @@ public final class Randomly {
         return extractNrRandomColumns(columns, nr);
     }
 
+    @SafeVarargs
     public static <T> List<T> subset(int nr, @SuppressWarnings("unchecked") T... values) {
-        List<T> list = new ArrayList<>();
-        for (T val : values) {
-            list.add(val);
-        }
+        List<T> list = new ArrayList<>(Arrays.asList(values));
         return extractNrRandomColumns(list, nr);
     }
 
+    @SafeVarargs
     public static <T> List<T> subset(@SuppressWarnings("unchecked") T... values) {
-        List<T> list = new ArrayList<>();
-        for (T val : values) {
-            list.add(val);
-        }
+        List<T> list = new ArrayList<>(Arrays.asList(values));
         return subset(list);
     }
 
@@ -190,19 +186,15 @@ public final class Randomly {
     }
 
     public long getInteger() {
-        if (smallBiasProbability()) {
-            return Randomly.fromOptions(-1L, Long.MAX_VALUE, Long.MIN_VALUE, 1L, 0L);
-        } else {
-            if (cacheProbability()) {
-                Long l = getFromLongCache();
-                if (l != null) {
-                    return l;
-                }
+        if (cacheProbability()) {
+            Long l = getFromLongCache();
+            if (l != null) {
+                return l;
             }
-            long nextLong = getThreadRandom().get().nextInt();
-            addToCache(nextLong);
-            return nextLong;
         }
+        long nextLong = getThreadRandom().get().nextInt(Integer.MAX_VALUE);
+        addToCache(nextLong);
+        return nextLong;
     }
 
     public short getSmallInt() {
@@ -214,6 +206,9 @@ public final class Randomly {
         }
         short nextShort = (short) getThreadRandom().get().nextInt(Short.MAX_VALUE);
         addToCache(nextShort);
+        if (smallBiasProbability()) {
+            addToCache(nextShort);
+        }
         return nextShort;
 
     }
@@ -266,7 +261,7 @@ public final class Randomly {
                 int chars = getStringLength(r);
                 for (int i = 0; i < chars; i++) {
                     if (Randomly.getBooleanWithRatherLowProbability()) {
-                        char val = (char) r.getInteger();
+                        char val = r.getChar().charAt(0);
                         if (val != 0) {
                             sb.append(val);
                         }
@@ -370,7 +365,7 @@ public final class Randomly {
             }
         }
         do {
-            value = getInteger();
+            value = getLong(0, Long.MAX_VALUE);
         } while (value == 0);
         assert value != 0;
         addToCache(value);

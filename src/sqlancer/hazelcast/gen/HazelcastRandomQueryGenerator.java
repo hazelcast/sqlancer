@@ -3,6 +3,7 @@ package sqlancer.hazelcast.gen;
 import sqlancer.Randomly;
 import sqlancer.hazelcast.HazelcastGlobalState;
 import sqlancer.hazelcast.ast.HazelcastConstant;
+import sqlancer.hazelcast.ast.HazelcastConstants;
 import sqlancer.hazelcast.ast.HazelcastExpression;
 import sqlancer.hazelcast.ast.HazelcastSelect;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastDataType;
@@ -48,10 +49,10 @@ public final class HazelcastRandomQueryGenerator {
             select.setOrderByExpressions(gen.generateOrderBy());
         }
         if (Randomly.getBoolean()) {
-            select.setLimitClause(HazelcastConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
+            select.setLimitClause(HazelcastConstants.createLongConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             if (Randomly.getBoolean()) {
                 select.setOffsetClause(
-                        HazelcastConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
+                        HazelcastConstants.createLongConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             }
         }
         if (Randomly.getBooleanWithRatherLowProbability()) {

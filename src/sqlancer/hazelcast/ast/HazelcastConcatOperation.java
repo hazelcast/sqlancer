@@ -11,7 +11,7 @@ public class HazelcastConcatOperation extends BinaryNode<HazelcastExpression> im
 
     @Override
     public HazelcastDataType getExpressionType() {
-        return HazelcastDataType.TEXT;
+        return HazelcastDataType.VARCHAR;
     }
 
     @Override
@@ -22,11 +22,11 @@ public class HazelcastConcatOperation extends BinaryNode<HazelcastExpression> im
             return null;
         }
         if (leftExpectedValue.isNull() || rightExpectedValue.isNull()) {
-            return HazelcastConstant.createNullConstant();
+            return HazelcastConstants.createNullConstant();
         }
-        String leftStr = leftExpectedValue.cast(HazelcastDataType.TEXT).getUnquotedTextRepresentation();
-        String rightStr = rightExpectedValue.cast(HazelcastDataType.TEXT).getUnquotedTextRepresentation();
-        return HazelcastConstant.createTextConstant(leftStr + rightStr);
+        String leftStr = leftExpectedValue.cast(HazelcastDataType.VARCHAR).getUnquotedTextRepresentation();
+        String rightStr = rightExpectedValue.cast(HazelcastDataType.VARCHAR).getUnquotedTextRepresentation();
+        return HazelcastConstants.createVarcharConstant(leftStr + rightStr);
     }
 
     @Override

@@ -31,7 +31,7 @@ public class HazelcastInOperation implements HazelcastExpression {
             return null;
         }
         if (leftValue.isNull()) {
-            return HazelcastConstant.createNullConstant();
+            return HazelcastConstants.createNullConstant();
         }
         boolean isNull = false;
         for (HazelcastExpression expr : getListElements()) {
@@ -43,14 +43,14 @@ public class HazelcastInOperation implements HazelcastExpression {
                 isNull = true;
             } else if (rightExpectedValue.isEquals(this.expr.getExpectedValue()).isBoolean()
                     && rightExpectedValue.isEquals(this.expr.getExpectedValue()).asBoolean()) {
-                return HazelcastConstant.createBooleanConstant(isTrue);
+                return HazelcastConstants.createBooleanConstant(isTrue);
             }
         }
 
         if (isNull) {
-            return HazelcastConstant.createNullConstant();
+            return HazelcastConstants.createNullConstant();
         } else {
-            return HazelcastConstant.createBooleanConstant(!isTrue);
+            return HazelcastConstants.createBooleanConstant(!isTrue);
         }
     }
 

@@ -35,10 +35,6 @@ public interface HazelcastVisitor {
 
     void visit(HazelcastAggregate op);
 
-    void visit(HazelcastSimilarTo op);
-
-    void visit(HazelcastCollate op);
-
     void visit(HazelcastPOSIXRegularExpression op);
 
     void visit(HazelcastFromTable from);
@@ -74,12 +70,8 @@ public interface HazelcastVisitor {
             visit((HazelcastAggregate) expression);
         } else if (expression instanceof HazelcastPostfixText) {
             visit((HazelcastPostfixText) expression);
-        } else if (expression instanceof HazelcastSimilarTo) {
-            visit((HazelcastSimilarTo) expression);
         } else if (expression instanceof HazelcastPOSIXRegularExpression) {
             visit((HazelcastPOSIXRegularExpression) expression);
-        } else if (expression instanceof HazelcastCollate) {
-            visit((HazelcastCollate) expression);
         } else if (expression instanceof HazelcastFromTable) {
             visit((HazelcastFromTable) expression);
         } else if (expression instanceof HazelcastSubquery) {

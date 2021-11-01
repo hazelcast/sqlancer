@@ -34,23 +34,15 @@ public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<Hazelca
 
     public HazelcastTLPBase(HazelcastGlobalState state) {
         super(state);
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        HazelcastCommon.addCommonFetchErrors(errors);
+        this.errors = HazelcastCommon.knownErrors;
     }
 
     @Override
     public void check() throws SQLException {
         s = state.getSchema();
-        targetTables = s.getRandomTableNonEmptyTables();
+        targetTables = s.getRandomTableNonEmptyTable();
         List<HazelcastTable> tables = targetTables.getTables();
-        List<HazelcastJoin> joins = getJoinStatements(state, targetTables.getColumns(), tables);
-        generateSelectBase(tables, joins);
-    }
-
-    protected List<HazelcastJoin> getJoinStatements(HazelcastGlobalState globalState, List<HazelcastColumn> columns,
-                                                    List<HazelcastTable> tables) {
-        return HazelcastNoRECOracle.getJoinStatements(state, columns, tables);
-        // TODO joins
+        generateSelectBase(tables, null);
     }
 
     protected void generateSelectBase(List<HazelcastTable> tables, List<HazelcastJoin> joins) {
@@ -62,7 +54,6 @@ public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<Hazelca
         select.setFetchColumns(generateFetchColumns());
         select.setFromList(tableList);
         select.setWhereClause(null);
-        select.setJoinClauses(joins);
         if (Randomly.getBoolean()) {
             select.setForClause(ForClause.getRandom());
         }
@@ -102,10 +93,10 @@ public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<Hazelca
             select.setOrderByExpressions(gen.generateOrderBy());
         }
         if (Randomly.getBoolean()) {
-            select.setLimitClause(HazelcastConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
+            select.setLimitClause(HazelcastConstants.createLongConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             if (Randomly.getBoolean()) {
                 select.setOffsetClause(
-                        HazelcastConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
+                        HazelcastConstants.createLongConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             }
         }
         if (Randomly.getBooleanWithRatherLowProbability()) {

@@ -132,10 +132,28 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
         try {
             updateSchema();
         } catch (Exception e) {
+            if (e.getMessage().contains("Hazelcast instance is not active")) {
+                throw new IgnoreMeException();
+            }
             e.printStackTrace();
             throw new AssertionError();
         }
 
+        return schema;
+    }
+
+    public S getSchema(boolean couldAffectSchema) {
+        if (couldAffectSchema) {
+            try {
+                updateSchema();
+            } catch (Exception e) {
+                if (e.getMessage().contains("Hazelcast instance is not active")) {
+                    throw new IgnoreMeException();
+                }
+                e.printStackTrace();
+                throw new AssertionError();
+            }
+        }
         return schema;
     }
 

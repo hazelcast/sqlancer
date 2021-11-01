@@ -38,8 +38,7 @@ public class HazelcastNoRECOracle extends NoRECBase<HazelcastGlobalState> implem
     public HazelcastNoRECOracle(HazelcastGlobalState globalState) {
         super(globalState);
         this.s = globalState.getSchema();
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        HazelcastCommon.addCommonFetchErrors(errors);
+        this.errors = HazelcastCommon.knownErrors;
     }
 
     @Override
@@ -102,8 +101,8 @@ public class HazelcastNoRECOracle extends NoRECBase<HazelcastGlobalState> implem
                                          List<HazelcastJoin> joinStatements) throws SQLException {
         HazelcastSelect select = new HazelcastSelect();
         HazelcastCastOperation isTrue = new HazelcastCastOperation(randomWhereCondition,
-                HazelcastCompoundDataType.create(HazelcastDataType.INT));
-        HazelcastPostfixText asText = new HazelcastPostfixText(isTrue, " as count", null, HazelcastDataType.INT);
+                HazelcastCompoundDataType.create(HazelcastDataType.INTEGER));
+        HazelcastPostfixText asText = new HazelcastPostfixText(isTrue, " as count", null, HazelcastDataType.INTEGER);
         select.setFetchColumns(Arrays.asList(asText));
         select.setFromList(fromTables);
         select.setSelectType(SelectType.ALL);

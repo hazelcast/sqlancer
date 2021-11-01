@@ -6,16 +6,16 @@ import sqlancer.common.oracle.PivotedQuerySynthesisBase;
 import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.hazelcast.HazelcastGlobalState;
-import sqlancer.hazelcast.HazelcastVisitor;
-import sqlancer.hazelcast.ast.*;
-import sqlancer.hazelcast.gen.HazelcastCommon;
-import sqlancer.hazelcast.gen.HazelcastExpressionGenerator;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastColumn;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastDataType;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastRowValue;
 import sqlancer.hazelcast.HazelcastSchema.HazelcastTables;
+import sqlancer.hazelcast.HazelcastVisitor;
+import sqlancer.hazelcast.ast.*;
 import sqlancer.hazelcast.ast.HazelcastPostfixOperation.PostfixOperator;
 import sqlancer.hazelcast.ast.HazelcastSelect.HazelcastFromTable;
+import sqlancer.hazelcast.gen.HazelcastCommon;
+import sqlancer.hazelcast.gen.HazelcastExpressionGenerator;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -25,12 +25,9 @@ import java.util.stream.Collectors;
 public class HazelcastPivotedQuerySynthesisOracle
         extends PivotedQuerySynthesisBase<HazelcastGlobalState, HazelcastRowValue, HazelcastExpression, SQLConnection> {
 
-    private List<HazelcastColumn> fetchColumns;
-
     public HazelcastPivotedQuerySynthesisOracle(HazelcastGlobalState globalState) throws SQLException {
         super(globalState);
-        HazelcastCommon.addCommonExpressionErrors(errors);
-        HazelcastCommon.addCommonFetchErrors(errors);
+        this.errors = HazelcastCommon.knownErrors;
     }
 
     @Override
@@ -39,18 +36,18 @@ public class HazelcastPivotedQuerySynthesisOracle
 
         HazelcastSelect selectStatement = new HazelcastSelect();
         selectStatement.setSelectType(Randomly.fromOptions(HazelcastSelect.SelectType.values()));
-        List<HazelcastColumn> columns = randomFromTables.getColumns();
         pivotRow = randomFromTables.getRandomRowValue(globalState.getConnection());
 
-        fetchColumns = columns;
-        selectStatement.setFromList(randomFromTables.getTables().stream().map(t -> new HazelcastFromTable(t, false))
+        List<HazelcastColumn> fetchColumns = pivotRow.getTable().getUsedColumns();
+        selectStatement.setFromList(pivotRow.getTable().getUsedTables()
+                .stream().map(t -> new HazelcastFromTable(t, true))
                 .collect(Collectors.toList()));
         selectStatement.setFetchColumns(fetchColumns.stream()
                 .map(c -> new HazelcastColumnValue(getFetchValueAliasedColumn(c), pivotRow.getValues().get(c)))
                 .collect(Collectors.toList()));
-        HazelcastExpression whereClause = generateRectifiedExpression(columns, pivotRow);
+        HazelcastExpression whereClause = generateRectifiedExpression(fetchColumns, pivotRow);
         selectStatement.setWhereClause(whereClause);
-        List<HazelcastExpression> groupByClause = generateGroupByClause(columns, pivotRow);
+        List<HazelcastExpression> groupByClause = generateGroupByClause(fetchColumns, pivotRow);
         selectStatement.setGroupByExpressions(groupByClause);
         HazelcastExpression limitClause = generateLimit();
         selectStatement.setLimitClause(limitClause);
@@ -58,10 +55,11 @@ public class HazelcastPivotedQuerySynthesisOracle
             HazelcastExpression offsetClause = generateOffset();
             selectStatement.setOffsetClause(offsetClause);
         }
-        List<HazelcastExpression> orderBy = new HazelcastExpressionGenerator(globalState).setColumns(columns)
+        List<HazelcastExpression> orderBy = new HazelcastExpressionGenerator(globalState).setColumns(fetchColumns)
                 .generateOrderBy();
         selectStatement.setOrderByExpressions(orderBy);
-        return new SQLQueryAdapter(HazelcastVisitor.asString(selectStatement));
+        String selectQuery = HazelcastVisitor.asString(selectStatement);
+        return new SQLQueryAdapter(selectQuery, HazelcastCommon.knownErrors);
     }
 
     /*
@@ -85,7 +83,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     private HazelcastConstant generateLimit() {
         if (Randomly.getBoolean()) {
-            return HazelcastConstant.createIntConstant(Integer.MAX_VALUE);
+            return HazelcastConstants.createLongConstant((int) Short.MAX_VALUE);
         } else {
             return null;
         }
@@ -93,7 +91,7 @@ public class HazelcastPivotedQuerySynthesisOracle
 
     private HazelcastExpression generateOffset() {
         if (Randomly.getBoolean()) {
-            return HazelcastConstant.createIntConstant(0);
+            return HazelcastConstants.createLongConstant(0);
         } else {
             return null;
         }
@@ -103,40 +101,28 @@ public class HazelcastPivotedQuerySynthesisOracle
         HazelcastExpression expr = new HazelcastExpressionGenerator(globalState).setColumns(columns).setRowValue(rw)
                 .generateExpressionWithExpectedResult(HazelcastDataType.BOOLEAN);
         HazelcastExpression result;
-        if (expr.getExpectedValue().isNull()) {
+        if (expr.getExpectedValue() instanceof HazelcastConstants.HzNullConstant) {
             result = HazelcastPostfixOperation.create(expr, PostfixOperator.IS_NULL);
         } else {
-            result = HazelcastPostfixOperation.create(expr,
-                    expr.getExpectedValue().cast(HazelcastDataType.BOOLEAN).asBoolean() ? PostfixOperator.IS_TRUE
-                            : PostfixOperator.IS_FALSE);
+            PostfixOperator operator;
+            try {
+                operator = expr.getExpectedValue().cast(HazelcastDataType.BOOLEAN).asBoolean()
+                        ? PostfixOperator.IS_TRUE
+                        : PostfixOperator.IS_FALSE;
+            } catch (UnsupportedOperationException e) {
+                operator = PostfixOperator.IS_NULL;
+            }
+            result = HazelcastPostfixOperation.create(expr, operator);
         }
         rectifiedPredicates.add(result);
         return result;
     }
 
     @Override
-    protected Query<SQLConnection> getContainmentCheckQuery(Query<?> query) throws SQLException {
+    protected Query<SQLConnection> getContainmentCheckQuery(Query<?> query) {
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT * FROM ("); // ANOTHER SELECT TO USE ORDER BY without restrictions
         sb.append(query.getUnterminatedQueryString());
-        sb.append(") as result WHERE ");
-        int i = 0;
-        for (HazelcastColumn c : fetchColumns) {
-            if (i++ != 0) {
-                sb.append(" AND ");
-            }
-            sb.append("result.");
-            sb.append(c.getTable().getName());
-            sb.append(c.getName());
-            if (pivotRow.getValues().get(c).isNull()) {
-                sb.append(" IS NULL");
-            } else {
-                sb.append(" = ");
-                sb.append(pivotRow.getValues().get(c).getTextRepresentation());
-            }
-        }
-        String resultingQueryString = sb.toString();
-        return new SQLQueryAdapter(resultingQueryString, errors);
+        return new SQLQueryAdapter(sb.toString(), errors);
     }
 
     @Override

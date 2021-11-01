@@ -31,7 +31,6 @@ public class HazelcastTLPAggregateOracle extends HazelcastTLPBase implements Tes
 
     public HazelcastTLPAggregateOracle(HazelcastGlobalState state) {
         super(state);
-        HazelcastCommon.addGroupingErrors(errors);
     }
 
     @Override
@@ -41,13 +40,12 @@ public class HazelcastTLPAggregateOracle extends HazelcastTLPBase implements Tes
     }
 
     protected void aggregateCheck() throws SQLException {
-        HazelcastAggregateFunction aggregateFunction = Randomly.fromOptions(HazelcastAggregateFunction.MAX,
-                HazelcastAggregateFunction.MIN, HazelcastAggregateFunction.SUM,
-//                HazelcastAggregateFunction.BIT_AND,
-//                HazelcastAggregateFunction.BIT_OR,
-//                HazelcastAggregateFunction.BOOL_AND,
-//                HazelcastAggregateFunction.BOOL_OR,
-                HazelcastAggregateFunction.COUNT);
+        HazelcastAggregateFunction aggregateFunction = Randomly.fromOptions(
+                HazelcastAggregateFunction.MAX,
+                HazelcastAggregateFunction.MIN,
+                HazelcastAggregateFunction.SUM,
+                HazelcastAggregateFunction.COUNT
+        );
         HazelcastAggregate aggregate = gen.generateArgsForAggregate(aggregateFunction.getRandomReturnType(),
                 aggregateFunction);
         List<HazelcastExpression> fetchColumns = new ArrayList<>();
@@ -70,7 +68,7 @@ public class HazelcastTLPAggregateOracle extends HazelcastTLPBase implements Tes
         state.getState().getLocalState().log(String.format("%s\n%s", firstQueryString, secondQueryString));
         if (firstResult == null && secondResult != null || firstResult != null && secondResult == null
                 || firstResult != null && !firstResult.contentEquals(secondResult)
-                        && !ComparatorHelper.isEqualDouble(firstResult, secondResult)) {
+                && !ComparatorHelper.isEqualDouble(firstResult, secondResult)) {
             if (secondResult != null && secondResult.contains("Inf")) {
                 throw new IgnoreMeException(); // FIXME: average computation
             }
@@ -128,30 +126,30 @@ public class HazelcastTLPAggregateOracle extends HazelcastTLPBase implements Tes
 
     private List<HazelcastExpression> mapped(HazelcastAggregate aggregate) {
         switch (aggregate.getFunction()) {
-        case SUM:
-        case COUNT:
+            case SUM:
+            case COUNT:
 //        case BIT_AND:
 //        case BIT_OR:
 //        case BOOL_AND:
 //        case BOOL_OR:
-        case MAX:
-        case MIN:
-            return aliasArgs(Arrays.asList(aggregate));
-        // case AVG:
-        //// List<PostgresExpression> arg = Arrays.asList(new
-        // PostgresCast(aggregate.getExpr().get(0),
-        // PostgresDataType.DECIMAL.get()));
-        // PostgresAggregate sum = new PostgresAggregate(PostgresAggregateFunction.SUM,
-        // aggregate.getExpr());
-        // PostgresCast count = new PostgresCast(
-        // new PostgresAggregate(PostgresAggregateFunction.COUNT, aggregate.getExpr()),
-        // PostgresDataType.DECIMAL.get());
-        //// PostgresBinaryArithmeticOperation avg = new
-        // PostgresBinaryArithmeticOperation(sum, count,
-        // PostgresBinaryArithmeticOperator.DIV);
-        // return aliasArgs(Arrays.asList(sum, count));
-        default:
-            throw new AssertionError(aggregate.getFunction());
+            case MAX:
+            case MIN:
+                return aliasArgs(Arrays.asList(aggregate));
+            // case AVG:
+            //// List<PostgresExpression> arg = Arrays.asList(new
+            // PostgresCast(aggregate.getExpr().get(0),
+            // PostgresDataType.DECIMAL.get()));
+            // PostgresAggregate sum = new PostgresAggregate(PostgresAggregateFunction.SUM,
+            // aggregate.getExpr());
+            // PostgresCast count = new PostgresCast(
+            // new PostgresAggregate(PostgresAggregateFunction.COUNT, aggregate.getExpr()),
+            // PostgresDataType.DECIMAL.get());
+            //// PostgresBinaryArithmeticOperation avg = new
+            // PostgresBinaryArithmeticOperation(sum, count,
+            // PostgresBinaryArithmeticOperator.DIV);
+            // return aliasArgs(Arrays.asList(sum, count));
+            default:
+                throw new AssertionError(aggregate.getFunction());
         }
     }
 
@@ -166,12 +164,12 @@ public class HazelcastTLPAggregateOracle extends HazelcastTLPBase implements Tes
 
     private String getOuterAggregateFunction(HazelcastAggregate aggregate) {
         switch (aggregate.getFunction()) {
-        // case AVG:
-        // return "SUM(agg0::DECIMAL)/SUM(agg1)::DECIMAL";
-        case COUNT:
-            return HazelcastAggregateFunction.SUM.toString() + "(agg0)";
-        default:
-            return aggregate.getFunction().toString() + "(agg0)";
+            // case AVG:
+            // return "SUM(agg0::DECIMAL)/SUM(agg1)::DECIMAL";
+            case COUNT:
+                return HazelcastAggregateFunction.SUM.toString() + "(agg0)";
+            default:
+                return aggregate.getFunction().toString() + "(agg0)";
         }
     }
 
