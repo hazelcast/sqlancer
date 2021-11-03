@@ -15,17 +15,17 @@ public class MainOptions {
 
     @Parameter(names = {
             "--num-threads"}, description = "How many threads should run concurrently to test separate databases")
-    private int nrConcurrentThreads = 4; // NOPMD
+    private int nrConcurrentThreads = 16; // NOPMD
 
     @Parameter(names = {
             "--random-seed"}, description = "A seed value != -1 that can be set to make the query and database generation deterministic")
     private long randomSeed = ThreadLocalRandom.current().nextLong(); // NOPMD
 
     @Parameter(names = {"--num-tries"}, description = "Specifies after how many found errors to stop testing")
-    private int totalNumberTries = 10; // NOPMD
+    private int totalNumberTries = 100; // NOPMD
 
     @Parameter(names = {"--max-num-inserts"}, description = "Specifies how many INSERT statements should be issued")
-    private int maxNumberInserts = 1000; // NOPMD
+    private int maxNumberInserts = 10000; // NOPMD
 
     @Parameter(names = {"--max-num-updates"}, description = "Specifies how many UPDATE/DELETE statements should be issued")
     private int maxNumberUpdates = 1; // NOPMD
@@ -36,7 +36,7 @@ public class MainOptions {
 
     @Parameter(names = {
             "--num-queries"}, description = "Specifies the number of queries to be issued to a database before creating a new database")
-    private int nrQueries = 10000; // NOPMD
+    private int nrQueries = 100000; // NOPMD
 
     @Parameter(names = {
             "--num-statement-kind-retries"}, description = "Specifies the number of times a specific statement kind (e.g., INSERT) should be retried when the DBMS indicates that it failed")
@@ -94,7 +94,7 @@ public class MainOptions {
     private boolean useConnectionTest = true; // NOPMD
 
     @Parameter(names = "--constant-cache-size", description = "Specifies the size of the constant cache. This option only takes effect when constant caching is enabled")
-    private int constantCacheSize = 100; // NOPMD
+    private int constantCacheSize = 10; // NOPMD
 
     @Parameter(names = "--database-prefix", description = "The prefix used for each database created")
     private String databasePrefix = "database"; // NOPMD

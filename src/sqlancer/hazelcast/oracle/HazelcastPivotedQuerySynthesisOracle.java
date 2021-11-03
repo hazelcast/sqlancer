@@ -31,7 +31,7 @@ public class HazelcastPivotedQuerySynthesisOracle
     }
 
     @Override
-    public SQLQueryAdapter getRectifiedQuery() throws SQLException {
+    public SQLQueryAdapter getRectifiedQuery() {
         HazelcastTables randomFromTables = globalState.getSchema().getRandomTableNonEmptyTables();
 
         HazelcastSelect selectStatement = new HazelcastSelect();
