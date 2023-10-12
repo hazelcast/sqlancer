@@ -5,9 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.hazelcast.sql.impl.QueryException;
 import sqlancer.GlobalState;
-import sqlancer.IgnoreMeException;
 import sqlancer.Main;
 import sqlancer.SQLConnection;
 
@@ -26,11 +24,24 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
     }
 
     public SQLQueryAdapter(String query, ExpectedErrors expectedErrors) {
-        this(query, expectedErrors, false);
+        this(query, expectedErrors, guessAffectSchemaFromQuery(query));
+    }
+
+    private static boolean guessAffectSchemaFromQuery(String query) {
+        return query.contains("CREATE TABLE") && !query.startsWith("EXPLAIN");
     }
 
     public SQLQueryAdapter(String query, ExpectedErrors expectedErrors, boolean couldAffectSchema) {
-        this.query = canonicalizeString(query);
+        this(query, expectedErrors, couldAffectSchema, true);
+    }
+
+    public SQLQueryAdapter(String query, ExpectedErrors expectedErrors, boolean couldAffectSchema,
+            boolean canonicalizeString) {
+        if (canonicalizeString) {
+            this.query = canonicalizeString(query);
+        } else {
+            this.query = query;
+        }
         this.expectedErrors = expectedErrors;
         this.couldAffectSchema = couldAffectSchema;
         checkQueryString();
@@ -48,11 +59,8 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
     }
 
     private void checkQueryString() {
-        if (query.contains("CREATE TABLE") && !couldAffectSchema) {
+        if (!couldAffectSchema && guessAffectSchemaFromQuery(query)) {
             throw new AssertionError("CREATE TABLE statements should set couldAffectSchema to true");
-        }
-        if (query.equals(";")) {
-            throw new IgnoreMeException();
         }
     }
 
@@ -95,20 +103,25 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
             return true;
         } catch (Exception e) {
             Main.nrUnsuccessfulActions.addAndGet(1);
-            System.out.println("Problems in query : " + query);
             checkException(e);
             return false;
+        } finally {
+            s.close();
         }
     }
 
     public void checkException(Exception e) throws AssertionError {
-        if (!expectedErrors.errorIsExpected(e.getMessage())) {
-            Throwable rootCause = findRootCause(e);
-            if (!expectedErrors.errorIsExpected(rootCause.getMessage())) {
-                e.printStackTrace();
-                throw new AssertionError(e.getMessage(), e);
+        Throwable ex = e;
+
+        while (ex != null) {
+            if (expectedErrors.errorIsExpected(ex.getMessage())) {
+                return;
+            } else {
+                ex = ex.getCause();
             }
         }
+
+        throw new AssertionError(query, e);
     }
 
     @Override
@@ -124,7 +137,6 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
             s = globalState.getConnection().createStatement();
         }
         ResultSet result;
-        System.out.println(query);
         try {
             if (fills.length > 0) {
                 result = ((PreparedStatement) s).executeQuery();
@@ -136,8 +148,7 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
                 return null;
             }
             return new SQLancerResultSet(result);
-        } catch (SQLException e) {
-            System.out.println("Problems in query : " + query);
+        } catch (Exception e) {
             s.close();
             Main.nrUnsuccessfulActions.addAndGet(1);
             checkException(e);
@@ -158,15 +169,5 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
     @Override
     public String getLogString() {
         return getQueryString();
-    }
-
-    private Throwable findRootCause(Throwable e) {
-        while (e.getCause() != null) {
-            if (e instanceof QueryException) {
-                return e;
-            }
-            e = e.getCause();
-        }
-        return e;
     }
 }

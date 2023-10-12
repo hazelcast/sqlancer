@@ -8,7 +8,7 @@ import sqlancer.IgnoreMeException;
 import sqlancer.Randomly;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Visitor;
 import sqlancer.sqlite3.gen.SQLite3ExpressionGenerator;
 import sqlancer.sqlite3.gen.dml.SQLite3DeleteGenerator;
@@ -100,11 +100,11 @@ public final class SQLite3CreateTriggerGenerator {
                     sb.append(", 'asdf'");
                 }
                 sb.append(")");
+                sb.append(";");
                 break;
             default:
                 throw new AssertionError();
             }
-            sb.append(";");
         }
         sb.append("END");
 

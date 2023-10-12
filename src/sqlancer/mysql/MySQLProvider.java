@@ -4,16 +4,26 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.google.auto.service.AutoService;
 
 import sqlancer.AbstractAction;
+import sqlancer.DatabaseProvider;
 import sqlancer.IgnoreMeException;
+import sqlancer.MainOptions;
 import sqlancer.Randomly;
 import sqlancer.SQLConnection;
 import sqlancer.SQLProviderAdapter;
 import sqlancer.StatementExecutor;
 import sqlancer.common.DBMSCommon;
+import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.common.query.SQLQueryProvider;
+import sqlancer.mysql.MySQLOptions.MySQLOracleFactory;
+import sqlancer.mysql.MySQLSchema.MySQLColumn;
+import sqlancer.mysql.MySQLSchema.MySQLTable;
 import sqlancer.mysql.gen.MySQLAlterTable;
 import sqlancer.mysql.gen.MySQLDeleteGenerator;
 import sqlancer.mysql.gen.MySQLDropIndex;
@@ -21,6 +31,7 @@ import sqlancer.mysql.gen.MySQLInsertGenerator;
 import sqlancer.mysql.gen.MySQLSetGenerator;
 import sqlancer.mysql.gen.MySQLTableGenerator;
 import sqlancer.mysql.gen.MySQLTruncateTableGenerator;
+import sqlancer.mysql.gen.MySQLUpdateGenerator;
 import sqlancer.mysql.gen.admin.MySQLFlush;
 import sqlancer.mysql.gen.admin.MySQLReset;
 import sqlancer.mysql.gen.datadef.MySQLIndexGenerator;
@@ -30,6 +41,7 @@ import sqlancer.mysql.gen.tblmaintenance.MySQLChecksum;
 import sqlancer.mysql.gen.tblmaintenance.MySQLOptimize;
 import sqlancer.mysql.gen.tblmaintenance.MySQLRepair;
 
+@AutoService(DatabaseProvider.class)
 public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOptions> {
 
     public MySQLProvider() {
@@ -56,6 +68,7 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
             String tableName = DBMSCommon.createTableName(g.getSchema().getDatabaseTables().size());
             return MySQLTableGenerator.generate(g, tableName);
         }), //
+        UPDATE(MySQLUpdateGenerator::create), //
         DELETE(MySQLDeleteGenerator::delete), //
         DROP_INDEX(MySQLDropIndex::generate);
 
@@ -121,6 +134,9 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
         case SELECT_INFO:
             nrPerformed = r.getInteger(0, 10);
             break;
+        case UPDATE:
+            nrPerformed = r.getInteger(0, 10);
+            break;
         case DELETE:
             nrPerformed = r.getInteger(0, 10);
             break;
@@ -145,17 +161,44 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
                     }
                 });
         se.executeStatements();
+
+        if (globalState.getDbmsSpecificOptions().getTestOracleFactory().stream()
+                .anyMatch((o) -> o == MySQLOracleFactory.CERT)) {
+            // Enfore statistic collected for all tables
+            ExpectedErrors errors = new ExpectedErrors();
+            MySQLErrors.addExpressionErrors(errors);
+            for (MySQLTable table : globalState.getSchema().getDatabaseTables()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("ANALYZE TABLE ");
+                sb.append(table.getName());
+                sb.append(" UPDATE HISTOGRAM ON ");
+                String columns = table.getColumns().stream().map(MySQLColumn::getName)
+                        .collect(Collectors.joining(", "));
+                sb.append(columns + ";");
+                globalState.executeStatement(new SQLQueryAdapter(sb.toString(), errors));
+            }
+        }
     }
 
     @Override
     public SQLConnection createDatabase(MySQLGlobalState globalState) throws SQLException {
+        String username = globalState.getOptions().getUserName();
+        String password = globalState.getOptions().getPassword();
+        String host = globalState.getOptions().getHost();
+        int port = globalState.getOptions().getPort();
+        if (host == null) {
+            host = MySQLOptions.DEFAULT_HOST;
+        }
+        if (port == MainOptions.NO_SET_PORT) {
+            port = MySQLOptions.DEFAULT_PORT;
+        }
         String databaseName = globalState.getDatabaseName();
         globalState.getState().logStatement("DROP DATABASE IF EXISTS " + databaseName);
         globalState.getState().logStatement("CREATE DATABASE " + databaseName);
         globalState.getState().logStatement("USE " + databaseName);
-        String url = "jdbc:mysql://localhost:3306/?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true";
-        Connection con = DriverManager.getConnection(url, globalState.getOptions().getUserName(),
-                globalState.getOptions().getPassword());
+        String url = String.format("jdbc:mysql://%s:%d?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true",
+                host, port);
+        Connection con = DriverManager.getConnection(url, username, password);
         try (Statement s = con.createStatement()) {
             s.execute("DROP DATABASE IF EXISTS " + databaseName);
         }
@@ -171,6 +214,17 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
     @Override
     public String getDBMSName() {
         return "mysql";
+    }
+
+    @Override
+    public boolean addRowsToAllTables(MySQLGlobalState globalState) throws Exception {
+        List<MySQLTable> tablesNoRow = globalState.getSchema().getDatabaseTables().stream()
+                .filter(t -> t.getNrRows(globalState) == 0).collect(Collectors.toList());
+        for (MySQLTable table : tablesNoRow) {
+            SQLQueryAdapter queryAddRows = MySQLInsertGenerator.insertRow(globalState, table);
+            globalState.executeStatement(queryAddRows);
+        }
+        return true;
     }
 
 }

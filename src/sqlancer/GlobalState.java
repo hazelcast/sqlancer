@@ -1,7 +1,5 @@
 package sqlancer;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.sql.HazelcastSqlException;
 import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLancerResultSet;
 import sqlancer.common.schema.AbstractSchema;
@@ -12,7 +10,7 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
     protected C databaseConnection;
     private Randomly r;
     private MainOptions options;
-    private O dmbsSpecificOptions;
+    private O dbmsSpecificOptions;
     private S schema;
     private Main.StateLogger logger;
     private StateToReproduce state;
@@ -28,12 +26,12 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
     }
 
     @SuppressWarnings("unchecked")
-    public void setDmbsSpecificOptions(Object dmbsSpecificOptions) {
-        this.dmbsSpecificOptions = (O) dmbsSpecificOptions;
+    public void setDbmsSpecificOptions(Object dbmsSpecificOptions) {
+        this.dbmsSpecificOptions = (O) dbmsSpecificOptions;
     }
 
-    public O getDmbsSpecificOptions() {
-        return dmbsSpecificOptions;
+    public O getDbmsSpecificOptions() {
+        return dbmsSpecificOptions;
     }
 
     public void setRandomly(Randomly r) {
@@ -91,13 +89,13 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
             timer = new ExecutionTimer().start();
         }
         if (getOptions().printAllStatements()) {
-            System.out.println(q.getQueryString());
+            System.out.println(q.getLogString());
         }
         if (getOptions().logEachSelect()) {
             if (logExecutionTime) {
-                getLogger().writeCurrentNoLineBreak(q.getQueryString());
+                getLogger().writeCurrentNoLineBreak(q.getLogString());
             } else {
-                getLogger().writeCurrent(q.getQueryString());
+                getLogger().writeCurrent(q.getLogString());
             }
         }
         return timer;
@@ -129,29 +127,11 @@ public abstract class GlobalState<O extends DBMSSpecificOptions<?>, S extends Ab
     }
 
     public S getSchema() {
-        try {
-            updateSchema();
-        } catch (Exception e) {
-            if (e.getMessage().contains("Hazelcast instance is not active")) {
-                throw new IgnoreMeException();
-            }
-            e.printStackTrace();
-            throw new AssertionError();
-        }
-
-        return schema;
-    }
-
-    public S getSchema(boolean couldAffectSchema) {
-        if (couldAffectSchema) {
+        if (schema == null) {
             try {
                 updateSchema();
             } catch (Exception e) {
-                if (e.getMessage().contains("Hazelcast instance is not active")) {
-                    throw new IgnoreMeException();
-                }
-                e.printStackTrace();
-                throw new AssertionError();
+                throw new AssertionError(e.getMessage());
             }
         }
         return schema;

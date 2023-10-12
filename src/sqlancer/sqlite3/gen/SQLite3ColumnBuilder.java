@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import sqlancer.Randomly;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Options.SQLite3OracleFactory;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Visitor;
 import sqlancer.sqlite3.schema.SQLite3Schema.SQLite3Column;
 
@@ -39,8 +39,8 @@ public class SQLite3ColumnBuilder {
     }
 
     public String createColumn(String columnName, SQLite3GlobalState globalState, List<SQLite3Column> columns) {
-        if (globalState.getDmbsSpecificOptions().oracles == SQLite3OracleFactory.PQS
-                || !globalState.getDmbsSpecificOptions().testCheckConstraints) {
+        if (globalState.getDbmsSpecificOptions().oracles == SQLite3OracleFactory.PQS
+                || !globalState.getDbmsSpecificOptions().testCheckConstraints) {
             allowCheck = false;
         }
         sb.append(columnName);
@@ -51,7 +51,7 @@ public class SQLite3ColumnBuilder {
         if (Randomly.getBooleanWithRatherLowProbability()) {
             List<Constraints> constraints = Randomly.subset(Constraints.values());
             if (!Randomly.getBooleanWithSmallProbability()
-                    || globalState.getDmbsSpecificOptions().testGeneratedColumns) {
+                    || globalState.getDbmsSpecificOptions().testGeneratedColumns) {
                 constraints.remove(Constraints.GENERATED_AS);
             }
             if (constraints.contains(Constraints.GENERATED_AS)) {

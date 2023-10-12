@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import sqlancer.Randomly;
 import sqlancer.common.gen.ExpressionGenerator;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.ast.SQLite3Aggregate;
 import sqlancer.sqlite3.ast.SQLite3Aggregate.SQLite3AggregateFunction;
 import sqlancer.sqlite3.ast.SQLite3Case.CasePair;
@@ -136,22 +136,28 @@ public class SQLite3ExpressionGenerator implements ExpressionGenerator<SQLite3Ex
 
     public List<Join> getRandomJoinClauses(List<SQLite3Table> tables) {
         List<Join> joinStatements = new ArrayList<>();
-        if (!globalState.getDmbsSpecificOptions().testJoins) {
+        if (!globalState.getDbmsSpecificOptions().testJoins) {
             return joinStatements;
         }
+        List<JoinType> options = new ArrayList<>(Arrays.asList(JoinType.values()));
         if (Randomly.getBoolean() && tables.size() > 1) {
             int nrJoinClauses = (int) Randomly.getNotCachedInteger(0, tables.size());
+            // Natural join is incompatible with other joins
+            // because it needs unique column names
+            // while other joins will produce duplicate column names
+            if (nrJoinClauses > 1) {
+                options.remove(JoinType.NATURAL);
+            }
             for (int i = 0; i < nrJoinClauses; i++) {
                 SQLite3Expression joinClause = generateExpression();
                 SQLite3Table table = Randomly.fromList(tables);
                 tables.remove(table);
-                JoinType options;
-                options = Randomly.fromOptions(JoinType.INNER, JoinType.CROSS, JoinType.OUTER, JoinType.NATURAL);
-                if (options == JoinType.NATURAL) {
+                JoinType selectedOption = Randomly.fromList(options);
+                if (selectedOption == JoinType.NATURAL) {
                     // NATURAL joins do not have an ON clause
                     joinClause = null;
                 }
-                Join j = new SQLite3Expression.Join(table, joinClause, options);
+                Join j = new SQLite3Expression.Join(table, joinClause, selectedOption);
                 joinStatements.add(j);
             }
 
@@ -165,7 +171,7 @@ public class SQLite3ExpressionGenerator implements ExpressionGenerator<SQLite3Ex
         if (Randomly.getBoolean()) {
             expr = new SQLite3OrderingTerm(expr, Ordering.getRandomValue());
         }
-        if (globalState.getDmbsSpecificOptions().testNullsFirstLast && Randomly.getBoolean()) {
+        if (globalState.getDbmsSpecificOptions().testNullsFirstLast && Randomly.getBoolean()) {
             expr = new SQLite3PostfixText(expr, Randomly.fromOptions(" NULLS FIRST", " NULLS LAST"),
                     null /* expr.getExpectedValue() */) {
                 @Override
@@ -185,7 +191,7 @@ public class SQLite3ExpressionGenerator implements ExpressionGenerator<SQLite3Ex
         switch (randomLiteral) {
         case INTEGER:
             if (Randomly.getBoolean()) {
-                return SQLite3Constant.createIntConstant(r.getInteger());
+                return SQLite3Constant.createIntConstant(r.getInteger(), Randomly.getBoolean());
             } else {
                 return SQLite3Constant.createTextConstant(String.valueOf(r.getInteger()));
             }
@@ -253,13 +259,13 @@ public class SQLite3ExpressionGenerator implements ExpressionGenerator<SQLite3Ex
         if (!allowSubqueries) {
             list.remove(ExpressionType.RANDOM_QUERY);
         }
-        if (!globalState.getDmbsSpecificOptions().testFunctions) {
+        if (!globalState.getDbmsSpecificOptions().testFunctions) {
             list.remove(ExpressionType.FUNCTION);
         }
-        if (!globalState.getDmbsSpecificOptions().testMatch) {
+        if (!globalState.getDbmsSpecificOptions().testMatch) {
             list.remove(ExpressionType.MATCH);
         }
-        if (!globalState.getDmbsSpecificOptions().testIn) {
+        if (!globalState.getDbmsSpecificOptions().testIn) {
             list.remove(ExpressionType.IN_OPERATOR);
         }
         ExpressionType randomExpressionType = Randomly.fromList(list);
@@ -504,7 +510,7 @@ public class SQLite3ExpressionGenerator implements ExpressionGenerator<SQLite3Ex
 
         private static List<AnyFunction> getAllFunctions(SQLite3GlobalState globalState) {
             List<AnyFunction> functions = new ArrayList<>(Arrays.asList(AnyFunction.values()));
-            if (!globalState.getDmbsSpecificOptions().testSoundex) {
+            if (!globalState.getDbmsSpecificOptions().testSoundex) {
                 boolean removed = functions.removeIf(f -> f.name.equals("soundex"));
                 if (!removed) {
                     throw new IllegalStateException();
@@ -547,6 +553,12 @@ public class SQLite3ExpressionGenerator implements ExpressionGenerator<SQLite3Ex
                 nrArgs += Randomly.smallNumber();
             }
             List<SQLite3Expression> expressions = randomFunction.generateArguments(nrArgs, depth + 1, this);
+            // The second argument of LIKELIHOOD must be a float number within 0.0 -1.0
+            if (randomFunction == AnyFunction.LIKELIHOOD) {
+                SQLite3Expression lastArg = SQLite3Constant.createRealConstant(Randomly.getPercentage());
+                expressions.remove(expressions.size() - 1);
+                expressions.add(lastArg);
+            }
             return new SQLite3Expression.Function(randomFunction.toString(),
                     expressions.toArray(new SQLite3Expression[0]));
         }
@@ -603,6 +615,11 @@ public class SQLite3ExpressionGenerator implements ExpressionGenerator<SQLite3Ex
             if (i == 0 && Randomly.getBoolean()) {
                 args[i] = new SQLite3Distinct(args[i]);
             }
+        }
+        // The second argument of LIKELIHOOD must be a float number within 0.0 -1.0
+        if (func == ComputableFunction.LIKELIHOOD) {
+            SQLite3Expression lastArg = SQLite3Constant.createRealConstant(Randomly.getPercentage());
+            args[args.length - 1] = lastArg;
         }
         return new SQLite3Function(func, args);
     }

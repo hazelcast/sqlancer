@@ -11,11 +11,16 @@ import sqlancer.DBMSSpecificOptions;
 import sqlancer.OracleFactory;
 import sqlancer.common.oracle.TestOracle;
 import sqlancer.mysql.MySQLOptions.MySQLOracleFactory;
+import sqlancer.mysql.oracle.MySQLCERTOracle;
+import sqlancer.mysql.oracle.MySQLFuzzer;
 import sqlancer.mysql.oracle.MySQLPivotedQuerySynthesisOracle;
 import sqlancer.mysql.oracle.MySQLTLPWhereOracle;
 
-@Parameters
+@Parameters(separators = "=", commandDescription = "MySQL (default port: " + MySQLOptions.DEFAULT_PORT
+        + ", default host: " + MySQLOptions.DEFAULT_HOST + ")")
 public class MySQLOptions implements DBMSSpecificOptions<MySQLOracleFactory> {
+    public static final String DEFAULT_HOST = "localhost";
+    public static final int DEFAULT_PORT = 3306;
 
     @Parameter(names = "--oracle")
     public List<MySQLOracleFactory> oracles = Arrays.asList(MySQLOracleFactory.TLP_WHERE);
@@ -25,7 +30,7 @@ public class MySQLOptions implements DBMSSpecificOptions<MySQLOracleFactory> {
         TLP_WHERE {
 
             @Override
-            public TestOracle create(MySQLGlobalState globalState) throws SQLException {
+            public TestOracle<MySQLGlobalState> create(MySQLGlobalState globalState) throws SQLException {
                 return new MySQLTLPWhereOracle(globalState);
             }
 
@@ -33,7 +38,7 @@ public class MySQLOptions implements DBMSSpecificOptions<MySQLOracleFactory> {
         PQS {
 
             @Override
-            public TestOracle create(MySQLGlobalState globalState) throws SQLException {
+            public TestOracle<MySQLGlobalState> create(MySQLGlobalState globalState) throws SQLException {
                 return new MySQLPivotedQuerySynthesisOracle(globalState);
             }
 
@@ -42,7 +47,25 @@ public class MySQLOptions implements DBMSSpecificOptions<MySQLOracleFactory> {
                 return true;
             }
 
-        }
+        },
+        CERT {
+            @Override
+            public TestOracle<MySQLGlobalState> create(MySQLGlobalState globalState) throws SQLException {
+                return new MySQLCERTOracle(globalState);
+            }
+
+            @Override
+            public boolean requiresAllTablesToContainRows() {
+                return true;
+            }
+        },
+        FUZZER {
+            @Override
+            public TestOracle<MySQLGlobalState> create(MySQLGlobalState globalState) throws Exception {
+                return new MySQLFuzzer(globalState);
+            }
+
+        };
     }
 
     @Override

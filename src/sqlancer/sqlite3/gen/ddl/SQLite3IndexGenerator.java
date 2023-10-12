@@ -3,12 +3,13 @@ package sqlancer.sqlite3.gen.ddl;
 import java.sql.SQLException;
 import java.util.List;
 
+import sqlancer.IgnoreMeException;
 import sqlancer.Randomly;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.sqlite3.SQLite3Errors;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Provider;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3ToStringVisitor;
 import sqlancer.sqlite3.ast.SQLite3Expression;
 import sqlancer.sqlite3.gen.SQLite3Common;
@@ -23,6 +24,9 @@ public class SQLite3IndexGenerator {
     private final SQLite3GlobalState globalState;
 
     public static SQLQueryAdapter insertIndex(SQLite3GlobalState globalState) throws SQLException {
+        if (globalState.getSchema().getIndexNames().size() >= globalState.getDbmsSpecificOptions().maxNumIndexes) {
+            throw new IgnoreMeException();
+        }
         return new SQLite3IndexGenerator(globalState).create();
     }
 

@@ -177,7 +177,7 @@ public class SQLite3ToStringVisitor extends ToStringVisitor<SQLite3Expression> i
                 // sb.append(c.asInt() == 1 ? "TRUE" : "FALSE");
                 // } else {
                 // - 0X8000000000000000 results in an error message otherwise
-                if (Randomly.getBoolean() || c.asInt() == Long.MIN_VALUE) {
+                if (!c.isHex() || c.asInt() == Long.MIN_VALUE) {
                     sb.append(c.asInt());
                 } else {
                     long intVal = c.asInt();
@@ -236,6 +236,12 @@ public class SQLite3ToStringVisitor extends ToStringVisitor<SQLite3Expression> i
             break;
         case OUTER:
             sb.append("LEFT OUTER");
+            break;
+        case RIGHT:
+            sb.append("RIGHT OUTER");
+            break;
+        case FULL:
+            sb.append("FULL OUTER");
             break;
         default:
             throw new AssertionError(join.getType());

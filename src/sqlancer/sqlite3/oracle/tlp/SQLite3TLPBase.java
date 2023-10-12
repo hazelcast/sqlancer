@@ -10,7 +10,7 @@ import sqlancer.common.gen.ExpressionGenerator;
 import sqlancer.common.oracle.TernaryLogicPartitioningOracleBase;
 import sqlancer.common.oracle.TestOracle;
 import sqlancer.sqlite3.SQLite3Errors;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.ast.SQLite3Expression;
 import sqlancer.sqlite3.ast.SQLite3Expression.Join;
 import sqlancer.sqlite3.ast.SQLite3Expression.SQLite3ColumnName;
@@ -23,7 +23,7 @@ import sqlancer.sqlite3.schema.SQLite3Schema.SQLite3Table;
 import sqlancer.sqlite3.schema.SQLite3Schema.SQLite3Tables;
 
 public class SQLite3TLPBase extends TernaryLogicPartitioningOracleBase<SQLite3Expression, SQLite3GlobalState>
-        implements TestOracle {
+        implements TestOracle<SQLite3GlobalState> {
 
     SQLite3Schema s;
     SQLite3Tables targetTables;

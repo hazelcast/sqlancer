@@ -9,7 +9,6 @@ import sqlancer.IgnoreMeException;
 import sqlancer.Randomly;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
-import sqlancer.tidb.TiDBBugs;
 import sqlancer.tidb.TiDBExpressionGenerator;
 import sqlancer.tidb.TiDBProvider.TiDBGlobalState;
 import sqlancer.tidb.TiDBSchema.TiDBColumn;
@@ -25,14 +24,22 @@ public class TiDBTableGenerator {
     private boolean primaryKeyAsTableConstraints;
     private final ExpectedErrors errors = new ExpectedErrors();
 
+    public static SQLQueryAdapter createRandomTableStatement(TiDBGlobalState globalState) throws SQLException {
+        if (globalState.getSchema().getDatabaseTables().size() > globalState.getDbmsSpecificOptions().maxNumTables) {
+            throw new IgnoreMeException();
+        }
+        return new TiDBTableGenerator().getQuery(globalState);
+    }
+
     public SQLQueryAdapter getQuery(TiDBGlobalState globalState) throws SQLException {
         errors.add("Information schema is changed during the execution of the statement");
+        errors.add("A CLUSTERED INDEX must include all columns in the table's partitioning function");
         String tableName = globalState.getSchema().getFreeTableName();
         int nrColumns = Randomly.smallNumber() + 1;
         allowPrimaryKey = Randomly.getBoolean();
         primaryKeyAsTableConstraints = allowPrimaryKey && Randomly.getBoolean();
         for (int i = 0; i < nrColumns; i++) {
-            TiDBColumn fakeColumn = new TiDBColumn("c" + i, null, false, false);
+            TiDBColumn fakeColumn = new TiDBColumn("c" + i, null, false, false, false);
             columns.add(fakeColumn);
         }
         TiDBExpressionGenerator gen = new TiDBExpressionGenerator(globalState).setColumns(columns);
@@ -59,10 +66,7 @@ public class TiDBTableGenerator {
             sb.append(columns.get(i).getName());
             sb.append(" ");
             TiDBCompositeDataType type;
-            do {
-                type = TiDBCompositeDataType.getRandom();
-            } while (type.getPrimitiveDataType() == TiDBDataType.INT && type.getSize() < 4
-                    || type.getPrimitiveDataType() == TiDBDataType.BOOL); // https://github.com/tidb-challenge-program/bug-hunting-issue/issues/49
+            type = TiDBCompositeDataType.getRandom();
             appendType(sb, type);
             sb.append(" ");
             boolean isGeneratedColumn = Randomly.getBooleanWithRatherLowProbability();
@@ -72,7 +76,6 @@ public class TiDBTableGenerator {
                 sb.append(") ");
                 sb.append(Randomly.fromOptions("STORED", "VIRTUAL"));
                 sb.append(" ");
-                errors.add("You have an error in your SQL syntax"); // https://github.com/tidb-challenge-program/bug-hunting-issue/issues/53
                 errors.add("Generated column can refer only to generated columns defined prior to it");
                 errors.add(
                         "'Defining a virtual generated column as primary key' is not supported for generated columns.");
@@ -87,10 +90,9 @@ public class TiDBTableGenerator {
             if (Randomly.getBooleanWithRatherLowProbability()) {
                 sb.append("NOT NULL ");
             }
-            if (Randomly.getBoolean() && type.getPrimitiveDataType() != TiDBDataType.TEXT
-                    && type.getPrimitiveDataType() != TiDBDataType.BLOB && !isGeneratedColumn) {
+            if (Randomly.getBoolean() && type.getPrimitiveDataType().canHaveDefault() && !isGeneratedColumn) {
                 sb.append("DEFAULT ");
-                sb.append(TiDBVisitor.asString(gen.generateConstant()));
+                sb.append(TiDBVisitor.asString(gen.generateConstant(type.getPrimitiveDataType())));
                 sb.append(" ");
                 errors.add("Invalid default value");
                 errors.add(
@@ -119,8 +121,7 @@ public class TiDBTableGenerator {
             errors.add(" used in key specification without a key length");
         }
         sb.append(")");
-        if (Randomly.getBooleanWithRatherLowProbability()
-                && !TiDBBugs.bug14 /* there are also a number of unresolved other partitioning bugs */) {
+        if (Randomly.getBooleanWithRatherLowProbability()) {
             sb.append("PARTITION BY HASH(");
             sb.append(TiDBVisitor.asString(gen.generateExpression()));
             sb.append(") ");
@@ -133,30 +134,6 @@ public class TiDBTableGenerator {
             errors.add("A UNIQUE INDEX must include all columns in the table's partitioning function");
             errors.add("is of a not allowed type for this type of partitioning");
             errors.add("The PARTITION function returns the wrong type");
-            if (TiDBBugs.bug16) {
-                errors.add("UnknownType: *ast.WhenClause");
-            }
-        }
-        List<Action> actions = Randomly.nonEmptySubset(Action.values());
-        for (Action a : actions) {
-            sb.append(" ");
-            switch (a) {
-            case AUTO_INCREMENT:
-                sb.append("AUTO_INCREMENT=");
-                sb.append(Randomly.getNotCachedInteger(0, Integer.MAX_VALUE));
-                break;
-            case PRE_SPLIT_REGIONS:
-                sb.append("PRE_SPLIT_REGIONS=");
-                sb.append(Randomly.getNotCachedInteger(0, Integer.MAX_VALUE));
-                break;
-            case SHARD_ROW_ID_BITS:
-                sb.append("SHARD_ROW_ID_BITS=");
-                sb.append(Randomly.getNotCachedInteger(0, Integer.MAX_VALUE));
-                errors.add("Unsupported shard_row_id_bits for table with primary key as row id");
-                break;
-            default:
-                throw new AssertionError(a);
-            }
         }
     }
 
@@ -165,24 +142,16 @@ public class TiDBTableGenerator {
     }
 
     private void appendType(StringBuilder sb, TiDBCompositeDataType type) {
-        if (type.getPrimitiveDataType() == TiDBDataType.CHAR) {
-            throw new IgnoreMeException();
-        }
         sb.append(type.toString());
         appendSpecifiers(sb, type.getPrimitiveDataType());
         appendSizeSpecifiers(sb, type.getPrimitiveDataType());
     }
 
-    private enum Action {
-        AUTO_INCREMENT, PRE_SPLIT_REGIONS, SHARD_ROW_ID_BITS
-    }
-
     private void appendSizeSpecifiers(StringBuilder sb, TiDBDataType type) {
-        if (type.isNumeric() && Randomly.getBoolean() && !TiDBBugs.bug16028) {
+        if (type.isNumeric() && Randomly.getBoolean()) {
             sb.append(" UNSIGNED");
         }
-        if (type.isNumeric() && Randomly.getBoolean()
-                && !TiDBBugs.bug16028 /* seems to be the same bug as https://github.com/pingcap/tidb/issues/16028 */) {
+        if (type.isNumeric() && Randomly.getBoolean()) {
             sb.append(" ZEROFILL");
         }
     }

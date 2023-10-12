@@ -2,9 +2,9 @@ package sqlancer.sqlite3.gen;
 
 import sqlancer.Randomly;
 import sqlancer.common.query.SQLQueryAdapter;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Provider;
 import sqlancer.sqlite3.SQLite3Provider.Action;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
 
 public final class SQLite3ExplainGenerator {
 
@@ -24,6 +24,13 @@ public final class SQLite3ExplainGenerator {
         SQLQueryAdapter query = action.getQuery(globalState);
         sb.append(query);
         return new SQLQueryAdapter(sb.toString(), query.getExpectedErrors());
+    }
+
+    public static String explain(String selectStr) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        sb.append("EXPLAIN QUERY PLAN ");
+        sb.append(selectStr);
+        return sb.toString();
     }
 
 }

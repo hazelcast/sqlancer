@@ -56,6 +56,23 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
                 throw new AssertionError(this);
             }
         }
+
+        public boolean canHaveDefault() {
+            switch (this) {
+            case INT:
+            case DECIMAL:
+            case FLOATING:
+            case BOOL:
+            case CHAR:
+                return true;
+            case NUMERIC:
+            case TEXT:
+            case BLOB:
+                return false;
+            default:
+                throw new AssertionError(this);
+            }
+        }
     }
 
     public static class TiDBCompositeDataType {
@@ -143,11 +160,14 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
 
         private final boolean isPrimaryKey;
         private final boolean isNullable;
+        private final boolean hasDefault;
 
-        public TiDBColumn(String name, TiDBCompositeDataType columnType, boolean isPrimaryKey, boolean isNullable) {
+        public TiDBColumn(String name, TiDBCompositeDataType columnType, boolean isPrimaryKey, boolean isNullable,
+                boolean hasDefault) {
             super(name, null, columnType);
             this.isPrimaryKey = isPrimaryKey;
             this.isNullable = isNullable;
+            this.hasDefault = hasDefault;
         }
 
         public boolean isPrimaryKey() {
@@ -156,6 +176,10 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
 
         public boolean isNullable() {
             return isNullable;
+        }
+
+        public boolean hasDefault() {
+            return hasDefault;
         }
 
     }
@@ -176,12 +200,21 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
         return new TiDBTables(Randomly.nonEmptySubset(getDatabaseTables()));
     }
 
+    public int getIndexCount() {
+        int count = 0;
+        for (TiDBTable table : getDatabaseTables()) {
+            count += table.getIndexes().size();
+        }
+        return count;
+    }
+
     private static TiDBCompositeDataType getColumnType(String typeString) {
         String trimmedStringType = typeString.replace(" zerofill", "").replace(" unsigned", "");
         if (trimmedStringType.contains("decimal")) {
             return new TiDBCompositeDataType(TiDBDataType.DECIMAL);
         }
-        if (trimmedStringType.startsWith("var_string") || trimmedStringType.contains("binary")) {
+        if (trimmedStringType.startsWith("var_string") || trimmedStringType.contains("binary")
+                || trimmedStringType.startsWith("varchar")) {
             return new TiDBCompositeDataType(TiDBDataType.TEXT);
         }
         if (trimmedStringType.startsWith("char")) {
@@ -195,34 +228,56 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
         } else {
             switch (trimmedStringType) {
             case "text":
+            case "mediumtext":
             case "longtext":
+            case "tinytext":
                 primitiveType = TiDBDataType.TEXT;
                 break;
             case "float":
+                size = 4;
+                primitiveType = TiDBDataType.FLOATING;
+                break;
             case "double":
+            case "double(8,6)": // workaround to address https://github.com/sqlancer/sqlancer/issues/669
+            case "double(23,16)":
+                size = 8;
                 primitiveType = TiDBDataType.FLOATING;
                 break;
             case "tinyint(1)":
                 primitiveType = TiDBDataType.BOOL;
+                size = 1;
                 break;
             case "null":
                 primitiveType = TiDBDataType.INT;
+                size = 1;
                 break;
+            case "tinyint(3)":
             case "tinyint(4)":
                 primitiveType = TiDBDataType.INT;
                 size = 1;
                 break;
+            case "smallint(5)":
             case "smallint(6)":
                 primitiveType = TiDBDataType.INT;
                 size = 2;
                 break;
+            case "int(10)":
             case "int(11)":
                 primitiveType = TiDBDataType.INT;
                 size = 4;
                 break;
             case "blob":
             case "longblob":
+            case "tinyblob":
                 primitiveType = TiDBDataType.BLOB;
+                break;
+            case "date":
+            case "datetime":
+            case "datetime(6)": // workaround to address https://github.com/sqlancer/sqlancer/issues/669
+            case "timestamp":
+            case "time":
+            case "year":
+                primitiveType = TiDBDataType.NUMERIC;
                 break;
             default:
                 throw new AssertionError(trimmedStringType);
@@ -248,6 +303,10 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
         List<String> tableNames = getTableNames(con);
         for (String tableName : tableNames) {
             List<TiDBColumn> databaseColumns = getTableColumns(con, tableName);
+            // Ignore invalid views
+            if (databaseColumns.isEmpty()) {
+                continue;
+            }
             List<TableIndex> indexes = getIndexes(con, tableName);
             boolean isView = tableName.startsWith("v");
             TiDBTable t = new TiDBTable(tableName, databaseColumns, indexes, isView);
@@ -294,10 +353,13 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
                     String dataType = rs.getString("Type");
                     boolean isNullable = rs.getString("Null").contentEquals("YES");
                     boolean isPrimaryKey = rs.getString("Key").contains("PRI");
-                    TiDBColumn c = new TiDBColumn(columnName, getColumnType(dataType), isPrimaryKey, isNullable);
+                    boolean hasDefault = rs.getString("Default") != null;
+                    TiDBColumn c = new TiDBColumn(columnName, getColumnType(dataType), isPrimaryKey, isNullable,
+                            hasDefault);
                     columns.add(c);
                 }
             }
+        } catch (SQLException e) { // Happens when
         }
         return columns;
     }

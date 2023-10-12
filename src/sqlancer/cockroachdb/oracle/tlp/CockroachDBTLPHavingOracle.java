@@ -13,6 +13,8 @@ import sqlancer.cockroachdb.ast.CockroachDBExpression;
 
 public class CockroachDBTLPHavingOracle extends CockroachDBTLPBase {
 
+    private String generatedQueryString;
+
     public CockroachDBTLPHavingOracle(CockroachDBGlobalState state) {
         super(state);
         errors.add("GROUP BY term out of range");
@@ -31,13 +33,15 @@ public class CockroachDBTLPHavingOracle extends CockroachDBTLPBase {
         select.setGroupByExpressions(gen.generateExpressions(Randomly.smallNumber() + 1));
         select.setHavingClause(null);
         String originalQueryString = CockroachDBVisitor.asString(select);
+        generatedQueryString = originalQueryString;
         List<String> resultSet = ComparatorHelper.getResultSetFirstColumnAsString(originalQueryString, errors, state);
 
+        CockroachDBExpression predicate = gen.generateExpression(CockroachDBDataType.BOOL.get());
         select.setHavingClause(predicate);
         String firstQueryString = CockroachDBVisitor.asString(select);
-        select.setHavingClause(negatedPredicate);
+        select.setHavingClause(gen.negatePredicate(predicate));
         String secondQueryString = CockroachDBVisitor.asString(select);
-        select.setHavingClause(isNullPredicate);
+        select.setHavingClause(gen.isNull(predicate));
         String thirdQueryString = CockroachDBVisitor.asString(select);
         List<String> combinedString = new ArrayList<>();
         List<String> secondResultSet = ComparatorHelper.getCombinedResultSet(firstQueryString, secondQueryString,
@@ -49,6 +53,11 @@ public class CockroachDBTLPHavingOracle extends CockroachDBTLPBase {
     @Override
     protected CockroachDBExpression generatePredicate() {
         return gen.generateHavingClause();
+    }
+
+    @Override
+    public String getLastQueryString() {
+        return generatedQueryString;
     }
 
 }

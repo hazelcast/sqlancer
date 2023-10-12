@@ -1,10 +1,17 @@
 package sqlancer.duckdb;
 
+import java.io.File;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
+
+import com.google.auto.service.AutoService;
 
 import sqlancer.AbstractAction;
+import sqlancer.DatabaseProvider;
 import sqlancer.IgnoreMeException;
+import sqlancer.MainOptions;
 import sqlancer.Randomly;
 import sqlancer.SQLConnection;
 import sqlancer.SQLGlobalState;
@@ -22,6 +29,7 @@ import sqlancer.duckdb.gen.DuckDBTableGenerator;
 import sqlancer.duckdb.gen.DuckDBUpdateGenerator;
 import sqlancer.duckdb.gen.DuckDBViewGenerator;
 
+@AutoService(DatabaseProvider.class)
 public class DuckDBProvider extends SQLProviderAdapter<DuckDBGlobalState, DuckDBOptions> {
 
     public DuckDBProvider() {
@@ -65,20 +73,20 @@ public class DuckDBProvider extends SQLProviderAdapter<DuckDBGlobalState, DuckDB
         case INSERT:
             return r.getInteger(0, globalState.getOptions().getMaxNumberInserts());
         case CREATE_INDEX:
-            if (!globalState.getDmbsSpecificOptions().testIndexes) {
+            if (!globalState.getDbmsSpecificOptions().testIndexes) {
                 return 0;
             }
             // fall through
         case UPDATE:
-            return r.getInteger(0, globalState.getDmbsSpecificOptions().maxNumUpdates + 1);
+            return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumUpdates + 1);
         case VACUUM: // seems to be ignored
         case ANALYZE: // seems to be ignored
         case EXPLAIN:
             return r.getInteger(0, 2);
         case DELETE:
-            return r.getInteger(0, globalState.getDmbsSpecificOptions().maxNumDeletes + 1);
+            return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumDeletes + 1);
         case CREATE_VIEW:
-            return r.getInteger(0, globalState.getDmbsSpecificOptions().maxNumViews + 1);
+            return r.getInteger(0, globalState.getDbmsSpecificOptions().maxNumViews + 1);
         default:
             throw new AssertionError(a);
         }
@@ -114,11 +122,38 @@ public class DuckDBProvider extends SQLProviderAdapter<DuckDBGlobalState, DuckDB
         se.executeStatements();
     }
 
+    public void tryDeleteFile(String fname) {
+        try {
+            File f = new File(fname);
+            f.delete();
+        } catch (Exception e) {
+        }
+    }
+
+    public void tryDeleteDatabase(String dbpath) {
+        if (dbpath.equals("") || dbpath.equals(":memory:")) {
+            return;
+        }
+        tryDeleteFile(dbpath);
+        tryDeleteFile(dbpath + ".wal");
+    }
+
     @Override
     public SQLConnection createDatabase(DuckDBGlobalState globalState) throws SQLException {
-        String url = "jdbc:duckdb:";
-        return new SQLConnection(DriverManager.getConnection(url, globalState.getOptions().getUserName(),
-                globalState.getOptions().getPassword()));
+        String databaseFile = System.getProperty("duckdb.database.file", "");
+        String url = "jdbc:duckdb:" + databaseFile;
+        tryDeleteDatabase(databaseFile);
+
+        MainOptions options = globalState.getOptions();
+        if (!(options.isDefaultUsername() && options.isDefaultPassword())) {
+            throw new AssertionError("DuckDB doesn't support credentials (username/password)");
+        }
+
+        Connection conn = DriverManager.getConnection(url);
+        Statement stmt = conn.createStatement();
+        stmt.execute("PRAGMA checkpoint_threshold='1 byte';");
+        stmt.close();
+        return new SQLConnection(conn);
     }
 
     @Override

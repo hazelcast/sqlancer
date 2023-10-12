@@ -5,13 +5,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import sqlancer.IgnoreMeException;
 import sqlancer.Randomly;
 import sqlancer.common.DBMSCommon;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.sqlite3.SQLite3Errors;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Options.SQLite3OracleFactory;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
 import sqlancer.sqlite3.gen.SQLite3ColumnBuilder;
 import sqlancer.sqlite3.gen.SQLite3Common;
 import sqlancer.sqlite3.schema.SQLite3Schema;
@@ -46,6 +47,14 @@ public class SQLite3TableGenerator {
         this.existingSchema = globalState.getSchema();
     }
 
+    public static SQLQueryAdapter createRandomTableStatement(SQLite3GlobalState globalState) {
+        if (globalState.getSchema().getTables().getTables()
+                .size() > globalState.getDbmsSpecificOptions().maxNumTables) {
+            throw new IgnoreMeException();
+        }
+        return createTableStatement(globalState.getSchema().getFreeTableName(), globalState);
+    }
+
     public static SQLQueryAdapter createTableStatement(String tableName, SQLite3GlobalState globalState) {
         SQLite3TableGenerator sqLite3TableGenerator = new SQLite3TableGenerator(tableName, globalState);
         sqLite3TableGenerator.start();
@@ -62,7 +71,7 @@ public class SQLite3TableGenerator {
 
     public void start() {
         sb.append("CREATE ");
-        if (globalState.getDmbsSpecificOptions().testTempTables && Randomly.getBoolean()) {
+        if (globalState.getDbmsSpecificOptions().testTempTables && Randomly.getBoolean()) {
             tempTable = true;
             if (Randomly.getBoolean()) {
                 sb.append("TEMP ");
@@ -110,12 +119,12 @@ public class SQLite3TableGenerator {
             }
         }
 
-        if (globalState.getDmbsSpecificOptions().testForeignKeys && Randomly.getBooleanWithSmallProbability()) {
+        if (globalState.getDbmsSpecificOptions().testForeignKeys && Randomly.getBooleanWithSmallProbability()) {
             addForeignKey();
         }
 
-        if (globalState.getDmbsSpecificOptions().testCheckConstraints && globalState
-                .getDmbsSpecificOptions().oracles != SQLite3OracleFactory.PQS /*
+        if (globalState.getDbmsSpecificOptions().testCheckConstraints && globalState
+                .getDbmsSpecificOptions().oracles != SQLite3OracleFactory.PQS /*
                                                                                * we are currently lacking a parser to
                                                                                * read column definitions, and would
                                                                                * interpret a COLLATE in the check
@@ -126,7 +135,7 @@ public class SQLite3TableGenerator {
         }
 
         sb.append(")");
-        if (globalState.getDmbsSpecificOptions().testWithoutRowids && containsPrimaryKey && !containsAutoIncrement
+        if (globalState.getDbmsSpecificOptions().testWithoutRowids && containsPrimaryKey && !containsAutoIncrement
                 && Randomly.getBoolean()) {
             // see https://sqlite.org/withoutrowid.html
             sb.append(" WITHOUT ROWID");
@@ -151,7 +160,7 @@ public class SQLite3TableGenerator {
      * @see https://www.sqlite.org/foreignkeys.html
      */
     private void addForeignKey() {
-        assert globalState.getDmbsSpecificOptions().testForeignKeys;
+        assert globalState.getDbmsSpecificOptions().testForeignKeys;
         List<String> foreignKeyColumns;
         if (Randomly.getBoolean()) {
             foreignKeyColumns = Arrays.asList(Randomly.fromList(columnNames));

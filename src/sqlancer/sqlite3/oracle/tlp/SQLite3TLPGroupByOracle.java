@@ -7,12 +7,14 @@ import java.util.stream.Collectors;
 
 import sqlancer.ComparatorHelper;
 import sqlancer.Randomly;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Visitor;
 import sqlancer.sqlite3.ast.SQLite3Expression;
 import sqlancer.sqlite3.ast.SQLite3Expression.SQLite3ColumnName;
 
 public class SQLite3TLPGroupByOracle extends SQLite3TLPBase {
+
+    private String generatedQueryString;
 
     public SQLite3TLPGroupByOracle(SQLite3GlobalState state) {
         super(state);
@@ -24,7 +26,7 @@ public class SQLite3TLPGroupByOracle extends SQLite3TLPBase {
         select.setGroupByClause(select.getFetchColumns());
         select.setWhereClause(null);
         String originalQueryString = SQLite3Visitor.asString(select);
-
+        generatedQueryString = originalQueryString;
         List<String> resultSet = ComparatorHelper.getResultSetFirstColumnAsString(originalQueryString, errors, state);
 
         select.setWhereClause(predicate);
@@ -44,6 +46,11 @@ public class SQLite3TLPGroupByOracle extends SQLite3TLPBase {
     List<SQLite3Expression> generateFetchColumns() {
         return Randomly.nonEmptySubset(targetTables.getColumns()).stream().map(c -> new SQLite3ColumnName(c, null))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public String getLastQueryString() {
+        return generatedQueryString;
     }
 
 }

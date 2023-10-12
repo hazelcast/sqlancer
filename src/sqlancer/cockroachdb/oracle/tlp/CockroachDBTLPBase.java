@@ -22,8 +22,9 @@ import sqlancer.common.gen.ExpressionGenerator;
 import sqlancer.common.oracle.TernaryLogicPartitioningOracleBase;
 import sqlancer.common.oracle.TestOracle;
 
-public class CockroachDBTLPBase extends
-        TernaryLogicPartitioningOracleBase<CockroachDBExpression, CockroachDBGlobalState> implements TestOracle {
+public class CockroachDBTLPBase
+        extends TernaryLogicPartitioningOracleBase<CockroachDBExpression, CockroachDBGlobalState>
+        implements TestOracle<CockroachDBGlobalState> {
 
     CockroachDBSchema s;
     CockroachDBTables targetTables;
@@ -54,7 +55,7 @@ public class CockroachDBTLPBase extends
 
     List<CockroachDBExpression> generateFetchColumns() {
         List<CockroachDBExpression> columns = new ArrayList<>();
-        if (Randomly.getBoolean()) {
+        if (Randomly.getBoolean() || targetTables.getColumns().size() == 0) {
             columns.add(new CockroachDBColumnReference(new CockroachDBColumn("*", null, false, false)));
         } else {
             columns.addAll(Randomly.nonEmptySubset(targetTables.getColumns()).stream()

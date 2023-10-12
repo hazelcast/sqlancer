@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import sqlancer.common.query.ExpectedErrors;
@@ -47,7 +48,8 @@ public final class ComparatorHelper {
                 e.printStackTrace();
             }
         }
-        SQLQueryAdapter q = new SQLQueryAdapter(queryString, errors);
+        boolean canonicalizeString = state.getOptions().canonicalizeSqlString();
+        SQLQueryAdapter q = new SQLQueryAdapter(queryString, errors, true, canonicalizeString);
         List<String> resultSet = new ArrayList<>();
         SQLancerResultSet result = null;
         try {
@@ -56,16 +58,18 @@ public final class ComparatorHelper {
                 throw new IgnoreMeException();
             }
             while (result.next()) {
-                resultSet.add(result.getString(1));
+                String resultTemp = result.getString(1);
+                if (resultTemp != null) {
+                    resultTemp = resultTemp.replaceAll("[\\.]0+$", ""); // Remove the trailing zeros as many DBMS treat
+                    // it as non-bugs
+                }
+                resultSet.add(resultTemp);
             }
         } catch (Exception e) {
             if (e instanceof IgnoreMeException) {
                 throw e;
             }
-            if (e instanceof NumberFormatException) {
-                // https://github.com/tidb-challenge-program/bug-hunting-issue/issues/57
-                throw new IgnoreMeException();
-            }
+
             if (e.getMessage() == null) {
                 throw new AssertionError(queryString, e);
             }
@@ -84,34 +88,56 @@ public final class ComparatorHelper {
     public static void assumeResultSetsAreEqual(List<String> resultSet, List<String> secondResultSet,
             String originalQueryString, List<String> combinedString, SQLGlobalState<?, ?> state) {
         if (resultSet.size() != secondResultSet.size()) {
-            String queryFormatString = "-- %s;\n-- cardinality: %d";
+            String queryFormatString = "-- %s;" + System.lineSeparator() + "-- cardinality: %d"
+                    + System.lineSeparator();
             String firstQueryString = String.format(queryFormatString, originalQueryString, resultSet.size());
-            String secondQueryString = String.format(queryFormatString,
-                    combinedString.stream().collect(Collectors.joining(";")), secondResultSet.size());
-            state.getState().getLocalState().log(String.format("%s\n%s", firstQueryString, secondQueryString));
-            String assertionMessage = String.format("the size of the result sets mismatch (%d and %d)!\n%s\n%s",
-                    resultSet.size(), secondResultSet.size(), firstQueryString, secondQueryString);
+            String combinedQueryString = String.join(";", combinedString);
+            String secondQueryString = String.format(queryFormatString, combinedQueryString, secondResultSet.size());
+            state.getState().getLocalState()
+                    .log(String.format("%s" + System.lineSeparator() + "%s", firstQueryString, secondQueryString));
+            String assertionMessage = String.format(
+                    "The size of the result sets mismatch (%d and %d)!" + System.lineSeparator()
+                            + "First query: \"%s\", whose cardinality is: %d" + System.lineSeparator()
+                            + "Second query:\"%s\", whose cardinality is: %d",
+                    resultSet.size(), secondResultSet.size(), originalQueryString, resultSet.size(),
+                    combinedQueryString, secondResultSet.size());
             throw new AssertionError(assertionMessage);
         }
 
         Set<String> firstHashSet = new HashSet<>(resultSet);
         Set<String> secondHashSet = new HashSet<>(secondResultSet);
 
-        if (!firstHashSet.equals(secondHashSet)) {
+        boolean validateResultSizeOnly = state.getOptions().validateResultSizeOnly();
+        if (!validateResultSizeOnly && !firstHashSet.equals(secondHashSet)) {
             Set<String> firstResultSetMisses = new HashSet<>(firstHashSet);
             firstResultSetMisses.removeAll(secondHashSet);
             Set<String> secondResultSetMisses = new HashSet<>(secondHashSet);
             secondResultSetMisses.removeAll(firstHashSet);
-            String queryFormatString = "-- %s;\n-- misses: %s";
+
+            String queryFormatString = "-- Query: \"%s\"; It misses: \"%s\"";
             String firstQueryString = String.format(queryFormatString, originalQueryString, firstResultSetMisses);
-            String secondQueryString = String.format(queryFormatString,
-                    combinedString.stream().collect(Collectors.joining(";")), secondResultSetMisses);
+            String secondQueryString = String.format(queryFormatString, String.join(";", combinedString),
+                    secondResultSetMisses);
             // update the SELECT queries to be logged at the bottom of the error log file
-            state.getState().getLocalState().log(String.format("%s\n%s", firstQueryString, secondQueryString));
-            String assertionMessage = String.format("the content of the result sets mismatch!\n%s\n%s",
-                    firstQueryString, secondQueryString);
+            state.getState().getLocalState()
+                    .log(String.format("%s" + System.lineSeparator() + "%s", firstQueryString, secondQueryString));
+            String assertionMessage = String.format("The content of the result sets mismatch!" + System.lineSeparator()
+                    + "First query : \"%s\"" + System.lineSeparator() + "Second query: \"%s\"", originalQueryString,
+                    secondQueryString);
             throw new AssertionError(assertionMessage);
         }
+    }
+
+    public static void assumeResultSetsAreEqual(List<String> resultSet, List<String> secondResultSet,
+            String originalQueryString, List<String> combinedString, SQLGlobalState<?, ?> state,
+            UnaryOperator<String> canonicalizationRule) {
+        // Overloaded version of assumeResultSetsAreEqual that takes a canonicalization function which is applied to
+        // both result sets before their comparison.
+        List<String> canonicalizedResultSet = resultSet.stream().map(canonicalizationRule).collect(Collectors.toList());
+        List<String> canonicalizedSecondResultSet = secondResultSet.stream().map(canonicalizationRule)
+                .collect(Collectors.toList());
+        assumeResultSetsAreEqual(canonicalizedResultSet, canonicalizedSecondResultSet, originalQueryString,
+                combinedString, state);
     }
 
     public static List<String> getCombinedResultSet(String firstQueryString, String secondQueryString,
@@ -149,6 +175,22 @@ public final class ComparatorHelper {
         combinedString.add(unionString);
         secondResultSet = getResultSetFirstColumnAsString(unionString, errors, state);
         return secondResultSet;
+    }
+
+    public static String canonicalizeResultValue(String value) {
+        if (value == null) {
+            return value;
+        }
+
+        switch (value) {
+        case "-0.0":
+            return "0.0";
+        case "-0":
+            return "0";
+        default:
+        }
+
+        return value;
     }
 
 }

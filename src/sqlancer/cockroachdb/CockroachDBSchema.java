@@ -208,6 +208,10 @@ public class CockroachDBSchema extends AbstractSchema<CockroachDBGlobalState, Co
         return new CockroachDBTables(Randomly.nonEmptySubset(getDatabaseTables()));
     }
 
+    public CockroachDBTables getRandomTableNonEmptyTables(int nr) {
+        return new CockroachDBTables(Randomly.nonEmptySubsetLeast(getDatabaseTables(), nr));
+    }
+
     private static CockroachDBCompositeDataType getColumnType(String typeString) {
         if (typeString.endsWith("[]")) {
             String substring = typeString.substring(0, typeString.length() - 2);
@@ -274,6 +278,14 @@ public class CockroachDBSchema extends AbstractSchema<CockroachDBGlobalState, Co
 
     }
 
+    public int getIndexCount() {
+        int count = 0;
+        for (CockroachDBTable table : getDatabaseTables()) {
+            count += table.getIndexes().size();
+        }
+        return count;
+    }
+
     public static CockroachDBSchema fromConnection(SQLConnection con, String databaseName) throws SQLException {
         List<CockroachDBTable> databaseTables = new ArrayList<>();
         List<String> tableNames = getTableNames(con);
@@ -284,6 +296,10 @@ public class CockroachDBSchema extends AbstractSchema<CockroachDBGlobalState, Co
             CockroachDBTable t = new CockroachDBTable(tableName, databaseColumns, indexes, isView);
             for (CockroachDBColumn c : databaseColumns) {
                 c.setTable(t);
+            }
+            // To avoid some situations that columns can not be retrieved.
+            if (databaseColumns.isEmpty()) {
+                continue;
             }
             databaseTables.add(t);
 
@@ -334,6 +350,11 @@ public class CockroachDBSchema extends AbstractSchema<CockroachDBGlobalState, Co
                             isNullable);
                     columns.add(c);
                 }
+            } catch (SQLException e) {
+                if (CockroachDBBugs.bug85394 && e.getMessage().contains("incompatible type annotation for ARRAY")) {
+                    return columns;
+                }
+                throw e;
             }
         }
         return columns;

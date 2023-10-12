@@ -13,14 +13,18 @@ import sqlancer.OracleFactory;
 import sqlancer.common.oracle.CompositeTestOracle;
 import sqlancer.common.oracle.TestOracle;
 import sqlancer.postgres.PostgresOptions.PostgresOracleFactory;
+import sqlancer.postgres.oracle.PostgresFuzzer;
 import sqlancer.postgres.oracle.PostgresNoRECOracle;
 import sqlancer.postgres.oracle.PostgresPivotedQuerySynthesisOracle;
 import sqlancer.postgres.oracle.tlp.PostgresTLPAggregateOracle;
 import sqlancer.postgres.oracle.tlp.PostgresTLPHavingOracle;
 import sqlancer.postgres.oracle.tlp.PostgresTLPWhereOracle;
 
-@Parameters
+@Parameters(separators = "=", commandDescription = "PostgreSQL (default port: " + PostgresOptions.DEFAULT_PORT
+        + ", default host: " + PostgresOptions.DEFAULT_HOST + ")")
 public class PostgresOptions implements DBMSSpecificOptions<PostgresOracleFactory> {
+    public static final String DEFAULT_HOST = "localhost";
+    public static final int DEFAULT_PORT = 5432;
 
     @Parameter(names = "--bulk-insert", description = "Specifies whether INSERT statements should be issued in bulk", arity = 1)
     public boolean allowBulkInsert;
@@ -32,18 +36,22 @@ public class PostgresOptions implements DBMSSpecificOptions<PostgresOracleFactor
     public boolean testCollations = true;
 
     @Parameter(names = "--connection-url", description = "Specifies the URL for connecting to the PostgreSQL server", arity = 1)
-    public String connectionURL = "postgresql://localhost:5432/test";
+    public String connectionURL = String.format("postgresql://%s:%d/test", PostgresOptions.DEFAULT_HOST,
+            PostgresOptions.DEFAULT_PORT);
+
+    @Parameter(names = "--extensions", description = "Specifies a comma-separated list of extension names to be created in each test database", arity = 1)
+    public String extensions = "";
 
     public enum PostgresOracleFactory implements OracleFactory<PostgresGlobalState> {
         NOREC {
             @Override
-            public TestOracle create(PostgresGlobalState globalState) throws SQLException {
+            public TestOracle<PostgresGlobalState> create(PostgresGlobalState globalState) throws SQLException {
                 return new PostgresNoRECOracle(globalState);
             }
         },
         PQS {
             @Override
-            public TestOracle create(PostgresGlobalState globalState) throws SQLException {
+            public TestOracle<PostgresGlobalState> create(PostgresGlobalState globalState) throws SQLException {
                 return new PostgresPivotedQuerySynthesisOracle(globalState);
             }
 
@@ -55,20 +63,27 @@ public class PostgresOptions implements DBMSSpecificOptions<PostgresOracleFactor
         HAVING {
 
             @Override
-            public TestOracle create(PostgresGlobalState globalState) throws SQLException {
+            public TestOracle<PostgresGlobalState> create(PostgresGlobalState globalState) throws SQLException {
                 return new PostgresTLPHavingOracle(globalState);
             }
 
         },
         QUERY_PARTITIONING {
             @Override
-            public TestOracle create(PostgresGlobalState globalState) throws SQLException {
-                List<TestOracle> oracles = new ArrayList<>();
+            public TestOracle<PostgresGlobalState> create(PostgresGlobalState globalState) throws SQLException {
+                List<TestOracle<PostgresGlobalState>> oracles = new ArrayList<>();
                 oracles.add(new PostgresTLPWhereOracle(globalState));
                 oracles.add(new PostgresTLPHavingOracle(globalState));
                 oracles.add(new PostgresTLPAggregateOracle(globalState));
-                return new CompositeTestOracle(oracles, globalState);
+                return new CompositeTestOracle<PostgresGlobalState>(oracles, globalState);
             }
+        },
+        FUZZER {
+            @Override
+            public TestOracle<PostgresGlobalState> create(PostgresGlobalState globalState) throws Exception {
+                return new PostgresFuzzer(globalState);
+            }
+
         };
 
     }

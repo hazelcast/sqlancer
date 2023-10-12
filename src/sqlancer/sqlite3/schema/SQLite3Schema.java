@@ -20,7 +20,7 @@ import sqlancer.common.schema.AbstractSchema;
 import sqlancer.common.schema.AbstractTableColumn;
 import sqlancer.common.schema.AbstractTables;
 import sqlancer.common.schema.TableIndex;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.ast.SQLite3Constant;
 import sqlancer.sqlite3.schema.SQLite3Schema.SQLite3Column.SQLite3CollateSequence;
 import sqlancer.sqlite3.schema.SQLite3Schema.SQLite3Table;
@@ -460,6 +460,34 @@ public class SQLite3Schema extends AbstractSchema<SQLite3GlobalState, SQLite3Tab
 
     public List<SQLite3Table> getDatabaseTablesWithoutViewsWithoutVirtualTables() {
         return getDatabaseTables().stream().filter(t -> !t.isView() && !t.isVirtual).collect(Collectors.toList());
+    }
+
+    public String getFreeVirtualTableName() {
+        int i = 0;
+        if (Randomly.getBooleanWithRatherLowProbability()) {
+            i = (int) Randomly.getNotCachedInteger(0, 100);
+        }
+        do {
+            String tableName = String.format("vt%d", i++);
+            if (getDatabaseTables().stream().noneMatch(t -> t.getName().equalsIgnoreCase(tableName))) {
+                return tableName;
+            }
+        } while (true);
+
+    }
+
+    public String getFreeRtreeTableName() {
+        int i = 0;
+        if (Randomly.getBooleanWithRatherLowProbability()) {
+            i = (int) Randomly.getNotCachedInteger(0, 100);
+        }
+        do {
+            String tableName = String.format("rt%d", i++);
+            if (getDatabaseTables().stream().noneMatch(t -> t.getName().equalsIgnoreCase(tableName))) {
+                return tableName;
+            }
+        } while (true);
+
     }
 
 }

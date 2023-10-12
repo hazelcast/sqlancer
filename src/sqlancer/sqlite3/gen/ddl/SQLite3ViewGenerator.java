@@ -2,13 +2,14 @@ package sqlancer.sqlite3.gen.ddl;
 
 import java.sql.SQLException;
 
+import sqlancer.IgnoreMeException;
 import sqlancer.Randomly;
 import sqlancer.common.DBMSCommon;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.sqlite3.SQLite3Errors;
+import sqlancer.sqlite3.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Options.SQLite3OracleFactory;
-import sqlancer.sqlite3.SQLite3Provider.SQLite3GlobalState;
 import sqlancer.sqlite3.SQLite3Visitor;
 import sqlancer.sqlite3.ast.SQLite3Expression;
 import sqlancer.sqlite3.ast.SQLite3Select;
@@ -29,9 +30,13 @@ public final class SQLite3ViewGenerator {
     }
 
     public static SQLQueryAdapter generate(SQLite3GlobalState globalState) throws SQLException {
+        if (globalState.getSchema().getTables().getTables()
+                .size() >= globalState.getDbmsSpecificOptions().maxNumTables) {
+            throw new IgnoreMeException();
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE");
-        if (Randomly.getBoolean()) {
+        if (globalState.getDbmsSpecificOptions().testTempTables && Randomly.getBoolean()) {
             sb.append(" ");
             sb.append(Randomly.fromOptions("TEMP", "TEMPORARY"));
         }
@@ -50,7 +55,7 @@ public final class SQLite3ViewGenerator {
         SQLite3Expression randomQuery;
         do {
             randomQuery = SQLite3RandomQuerySynthesizer.generate(globalState, size);
-        } while (globalState.getDmbsSpecificOptions().oracles == SQLite3OracleFactory.PQS
+        } while (globalState.getDbmsSpecificOptions().oracles == SQLite3OracleFactory.PQS
                 && !checkAffinity(randomQuery));
         sb.append(SQLite3Visitor.asString(randomQuery));
         return new SQLQueryAdapter(sb.toString(), errors, true);
