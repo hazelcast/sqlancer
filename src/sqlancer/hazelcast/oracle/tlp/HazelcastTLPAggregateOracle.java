@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class HazelcastTLPAggregateOracle extends HazelcastTLPBase implements TestOracle {
+public class HazelcastTLPAggregateOracle extends HazelcastTLPBase {
 
     private String firstResult;
     private String secondResult;
