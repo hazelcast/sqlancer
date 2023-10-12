@@ -24,8 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<HazelcastExpression, HazelcastGlobalState>
-        implements TestOracle {
+public class HazelcastTLPBase extends TernaryLogicPartitioningOracleBase<HazelcastExpression, HazelcastGlobalState> {
 
     protected HazelcastSchema s;
     protected HazelcastTables targetTables;
